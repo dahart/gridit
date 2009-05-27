@@ -1,8 +1,10 @@
 	AURORA_MENU_ADD_FLOAT_ITEM("Field Of View", &d_fov, 0.0f, 180.0f, 0.5f);
+
 	AURORA_MENU_ADD_FLOAT_ITEM("Default Follow Distance", &d_fDefaultFollowDistance, 0.0f, 30.0f, 0.2f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Distance Max", &d_fFollowDistanceMaxZone, 0.0f, 15.0f, 0.1f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Distance Min", &d_fFollowDistanceMinZone, 0.0f, 15.0f, 0.1f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Distance Filter Param", &d_fDistanceFilterParam, 0.0f, 1.0f, 0.01f);
+
 	AURORA_MENU_ADD_FLOAT_ITEM("Default Pitch", &d_fDefaultPitch, -90.0f, 90.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Pitch Max", &d_fPitchMaxZone, 0.0f, 45.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Pitch Min", &d_fPitchMinZone, 0.0f, 45.0f, 0.5f);
@@ -10,16 +12,21 @@
 	AURORA_MENU_ADD_FLOAT_ITEM("Pitch Controller Sense", &d_fPitchSense, 0.0f, 10.0f, 0.01f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Pitch Controller Max", &d_fControllerPitchMax, -90.0f, 90.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Pitch Controller Min", &d_fControllerPitchMin, -90.0f, 90.0f, 0.5f);
+
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Yaw Min", &d_fYawMinZone, 0.0f, 180.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Yaw Filter Param", &d_fYawFilterParam, 0.0f, 1.0f, 0.01f);
+	AURORA_MENU_ADD_BOOL_ITEM ("Use Prefered Yaw", &d_bUsePreferedYaw);
 	AURORA_MENU_ADD_FLOAT_ITEM("Yaw Controller Sense", &d_fYawSense, 0.0f, 10.0f, 0.01f);
+
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Focus Max", &d_fToFocusMaxZone, 0.0f, 45.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Delta Focus Min", &d_fToFocusMinZone, 0.0f, 45.0f, 0.5f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Focus Filter Param", &d_fFocusFilterParam, 0.0f, 1.0f, 0.01f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Focus Up Offset", &d_fFocusUpOffset, -10.0f, 10.0f, 0.1f);
+
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Distance", &d_fCurFollowDistance, 0.0f, 100.0f, 1.0f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Default Distance", &d_fCurDefaultFollowDistance, 0.0f, 100.0f, 1.0f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Pitch", &d_fCurPitch, -90.0f, 90.0f, 1.0f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Default Pitch", &d_fCurDefaultPitch, -90.0f, 90.0f, 1.0f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Yaw", &d_fCurYaw, -180.0f, 180.0f, 1.0f);
 	AURORA_MENU_ADD_FLOAT_ITEM("Current Angle To Focus", &d_fCurAngleToFocus, -180.0f, 180.0f, 1.0f);
+	//*/

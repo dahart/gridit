@@ -7,7 +7,8 @@ separableChars = "\[\]\{\}\(\)\;\,"
 
 matcher = r"""
 (?P<ws>\s+)                                 # white space
-|(?P<num>(?<=\s)\d+(?=\s))                  # match integers
+|(?P<quote>(?P<q>[\'\"]).*?(?P=q))          # quoted items
+|(?P<num>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # match ints & floats - dunno if the word boundary look-around matches are still needed...
 |(?P<sep>[""" + separableChars + """])      # any separable char
 |(?P<word>[^\s""" + separableChars + """]+) # groups of non-separable, non-whitespace chars
 """
@@ -17,7 +18,7 @@ e = re.compile(matcher, re.VERBOSE)
 #----------------------------------------------------------------------
 
 # riffle, as in riffle a deck of cards 
-# produce an output list by alternate picking one item from each input list
+# produce an output list by alternately picking one item from each input list
 # meant for strings-- operator.add concatenates
 def riffle(*args):
     return reduce(operator.add, zip(*args))
@@ -30,37 +31,67 @@ def trJustify(x):
 
 # collapse the text of whitespace pairs to a single space
 def trSpace(x):
-    if x[0] == 'ws': return (x[0],' ')
+    if x[0] == 'ws' and len(x[1]) > 0: return (x[0],' ')
     return x
+
+# expand separable chars with whitespace on either side
+def trSep(x):
+    if x[0] == 'sep': return [('ws', ''), x, ('ws', '')];
+    return [x];
+
+# replace consecutive ws's with a single one
+def reduceWS(l, x):
+    if x[0] == 'ws' and len(l) > 0 and l[-1][0] == 'ws':
+        return l[:-1] + [('ws', ' ' * max(len(x[1]), len(l[-1][1])))]
+    else:
+        return l + [x]
 
 #----------------------------------------------------------------------
 
 # read input lines
-lists = []
-justifies = []
+lines = []
 try:
     for line in fileinput.input():
         line = line.rstrip() # chomp & eat right-side whitespace
+        lines.append(line)
+except KeyboardInterrupt:
+    pass
 
-        # snag all matches
-        iter = e.finditer(line)
-        # expand all matches by name
-        groups = [match.groupdict() for match in iter]
-        # groups includes all non-matches- filter those out
-        matches = [ filter(lambda x:x[1] != None, g.iteritems())[0] for g in groups ]
 
-        # collapse all whitespace matches to single spaces
+
+lists = []
+justifies = []
+for line in lines:
+    # snag all matches
+    iter = e.finditer(line)
+    # expand all matches by name
+    groups = [match.groupdict() for match in iter]
+    # groups includes all non-matches- filter those out
+    matches = [ filter(lambda x:x[1] != None, g.iteritems())[0] for g in groups ]
+
+    if len(matches) == 0:
+        lists.append([''])
+        justifies.append([''])
+    else:
+        # add null ws between separable chars
+        matches = reduce(operator.concat, map(trSep, matches));
+        # now delete multiple whitespaces in a row - only propagate the largest WS
+        # in order for reduce to return a list of tuples, I have to listify
+        # the first element of the list of tuples, so that concatenate is operating
+        # on a list, and not on the first tuple.  get it?!?!
+        matches = reduce(reduceWS, [[matches[0]]] + matches[1:]);
+        # collapse all non-zero whitespace matches to single spaces
         (matchNames, list) = zip(*map(trSpace, matches))
+
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
-        if matchNames[0] == 'ws': list = (matches[0][1],) + list[1:]
+        if matchNames[0] == 'ws': 
+            list = (matches[0][1],) + list[1:]
         justify = map(trJustify, matchNames)
 
         # remember our text columns & justification
         lists.append(list)
         justifies.append(justify)
-except KeyboardInterrupt:
-    pass
 
 
 # compute column widths
