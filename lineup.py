@@ -1,4 +1,16 @@
 #!/usr/bin/env python
+#
+# line up columny sections of text (code)
+# this script assumes that each line has the same number of 'columns'
+# and pads the whitespace between all the columns so everything lines up.
+# takes stdin as input, prints to stdout
+#
+# at the bottom of this file are comments about how to 
+# use this, in macro form, for:
+# vs.net 2005
+# emacs [todo]
+#
+# 
 
 import fileinput, re, operator
 
@@ -117,3 +129,124 @@ for (list,justify) in zip(lists,justifies):
     fmt = ''.join(riffle(a,b,c,d))
 
     print fmt % tuple(list)
+
+
+######################################################################
+#
+# VS.NET 2005 macro using lineup.py:
+#
+# 
+#     Function GetOutputWindow() As OutputWindow
+#         Return DTE.Windows.Item(Constants.vsWindowKindOutput).Object()
+#     End Function
+
+#     Function GetActivePane() As OutputWindowPane
+#         Return GetOutputWindow.ActivePane
+#     End Function
+
+#     Private Sub ErrToOutputWindow(ByVal err As String)
+#         Dim OWp As OutputWindowPane = GetActivePane()
+#         ' Write exception text to this new pane.
+#         OWp.OutputString(err & vbNewLine)
+#     End Sub
+
+
+#     ' examples:
+#     ' How to redirect standard input
+#     ' http://msdn.microsoft.com/en-us/library/system.diagnostics.process.standardinput.aspx
+#     ' HTML tidy
+#     ' http://msdn.microsoft.com/en-us/library/aa289176(VS.71).aspx
+
+#     Sub LineUpText()
+#         Try
+#             DTE.UndoContext.Open("LineUpText")
+
+#             'From: http://www.ondotnet.com/pub/a/dotnet/2005/06/20/macrorefactor.html
+#             'Get the selected text
+#             Dim doc As Document = DTE.ActiveDocument
+#             Dim sel As TextSelection = doc.Selection
+#             Dim selectedText As String = sel.Text
+
+#             '            Dim doc As Document = _
+#             'applicationObject.Documents.Item(CustomIn)
+#             Dim td As TextDocument = CType(DTE.ActiveDocument.Object("TextDocument"), TextDocument)
+
+#             ''make sure we're working on complete lines only
+#             'If Not td.StartPoint.AtStartOfLine Then
+#             '    td.StartPoint.StartOfLine()
+#             'End If
+#             'If Not td.EndPoint.AtEndOfLine Then
+#             '    td.EndPoint.EndOfLine()
+#             'End If
+
+#             Dim sp As TextPoint = td.StartPoint
+#             Dim ep As TextPoint = td.EndPoint
+#             Dim editStartPt As EditPoint = sp.CreateEditPoint()
+#             Dim editEndPt As EditPoint = ep.CreateEditPoint()
+
+#             ' Get content of the document.
+#             Dim txtDoc As String = editStartPt.GetText(editEndPt)
+
+#             ' Set up process info.
+#             Dim psi As New System.Diagnostics.ProcessStartInfo
+#             psi.FileName = "d:/depot/bin/python.bat"
+#             psi.Arguments = Environ("UtilScripts") & "/lineup.py"
+#             ErrToOutputWindow(psi.FileName & " " & psi.Arguments)
+#             psi.CreateNoWindow = True
+#             psi.UseShellExecute = False
+#             psi.RedirectStandardInput = True
+#             psi.RedirectStandardOutput = True
+#             psi.RedirectStandardError = True
+
+#             ' Create the process.
+#             Dim p As New System.Diagnostics.Process
+
+#             ' Associate process info with the process.
+#             p.StartInfo = psi
+
+#             ' Run the process.
+#             Dim fStarted As Boolean = p.Start()
+#             If Not fStarted Then _
+#                 Throw New Exception("Unable to start " & psi.FileName & " process.")
+
+#             ' Set up streams to interact with process's stdin/stdout.
+#             Dim sw As System.IO.StreamWriter = p.StandardInput
+#             Dim sr As System.IO.StreamReader = p.StandardOutput
+#             Dim strFormattedDoc As String = Nothing
+
+#             ' Write content of Active Selection to process's stdin.
+#             sw.Write(selectedText)
+#             sw.Close()
+
+#             ' Read process's stdout and store in strFormattedDoc.
+#             strFormattedDoc = sr.ReadToEnd()
+#             sr.Close()
+
+#             ' Handle no stdout text, instead display error text.
+#             If strFormattedDoc = "" Then
+#                 Dim srError As System.IO.StreamReader = p.StandardError
+#                 Dim strError As String = srError.ReadToEnd()
+#                 srError.Close()
+#                 Throw New Exception(psi.FileName & " failed with error " _
+#                     & "information: " & strError)
+#             End If
+
+#             Dim objSel As TextSelection = DTE.ActiveDocument.Selection
+#             Dim objTP As VirtualPoint = objSel.TopPoint
+#             Dim objBP As VirtualPoint = objSel.BottomPoint
+#             Dim objTEP As EditPoint = objTP.CreateEditPoint
+#             Dim objBEP As EditPoint = objBP.CreateEditPoint
+#             objTEP.ReplaceText(objBEP, strFormattedDoc, CInt(vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces))
+
+#         Catch ex As Exception
+#             ErrToOutputWindow(ex.ToString())
+#         Finally
+#             DTE.UndoContext.Close()
+#         End Try
+#     End Sub
+#
+#######################################################################
+#
+# Emacs:
+#
+#######################################################################
