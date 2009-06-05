@@ -71,7 +71,9 @@ Public Module Module1
         Return GetOutputWindow.ActivePane
     End Function
 
-    Private Sub ErrToOutputWindow(ByVal ex As Exception, ByVal Guid As String)
+    Private Sub ErrToOutputWindow(ByVal err As String)
+        ', ByVal Guid As String
+
         '' Create a tool window handle for the Output window.
         'Dim win As Window = _
         '    applicationObject.Windows.Item(EnvDTE.Constants.vsWindowKindOutput)
@@ -85,7 +87,7 @@ Public Module Module1
         Dim OWp As OutputWindowPane = GetActivePane()
 
         ' Write exception text to this new pane.
-        OWp.OutputString(ex.ToString())
+        OWp.OutputString(err & vbNewLine)
     End Sub
 
 
@@ -314,93 +316,121 @@ Public Module Module1
     ' examples:
     ' http://msdn.microsoft.com/en-us/library/aa289176(VS.71).aspx
 
-    'Sub LineUpText()
-    '    'ByVal Guid As String, _
-    '    'ByVal ID As Integer, 
-    '    'ByVal CustomIn As Object, _
-    '    'ByVal CustomOut As Object, 
-    '    'ByRef CancelDefault As Boolean
-    '    ') 
-    '    '_ Handles CommandEvents.BeforeExecute
-    '    ' Indicate that we've handled this command event,
-    '    '   so there is no need to pass the event on.
-    '    'CancelDefault = True
+    Sub LineUpText()
+        '    'ByVal Guid As String, _
+        '    'ByVal ID As Integer, 
+        '    'ByVal CustomIn As Object, _
+        '    'ByVal CustomOut As Object, 
+        '    'ByRef CancelDefault As Boolean
+        '    ') 
+        '    '_ Handles CommandEvents.BeforeExecute
+        '    ' Indicate that we've handled this command event,
+        '    '   so there is no need to pass the event on.
+        '    'CancelDefault = True
 
-    '    Try
+        Try
 
-    '        'From: http://www.ondotnet.com/pub/a/dotnet/2005/06/20/macrorefactor.html
-    '        'Get the selected text
-    '        Dim doc As Document = DTE.ActiveDocument
-    '        Dim sel As TextSelection = doc.Selection
-    '        Dim selectedText As String = sel.Text
+            DTE.UndoContext.Open("LineUpText")
 
-    '        '            Dim doc As Document = _
-    '        'applicationObject.Documents.Item(CustomIn)
-    '        '            Dim td As TextDocument = _
-    '        'CType(doc.Object("TextDocument"), TextDocument)
+            'From: http://www.ondotnet.com/pub/a/dotnet/2005/06/20/macrorefactor.html
+            'Get the selected text
+            Dim doc As Document = DTE.ActiveDocument
+            Dim sel As TextSelection = doc.Selection
+            Dim selectedText As String = sel.Text
 
-    '        '            Dim sp As TextPoint = td.StartPoint
-    '        '            Dim ep As TextPoint = td.EndPoint
-    '        '            Dim editStartPt As EditPoint = sp.CreateEditPoint()
-    '        '            Dim editEndPt As EditPoint = ep.CreateEditPoint()
+            '            Dim doc As Document = _
+            'applicationObject.Documents.Item(CustomIn)
+            Dim td As TextDocument = CType(DTE.ActiveDocument.Object("TextDocument"), TextDocument)
 
-    '        '            ' Get content of the document.
-    '        '            Dim txtHTMLDoc As String = editStartPt.GetText(editEndPt)
+            ''make sure we're working on complete lines only
+            'If Not td.StartPoint.AtStartOfLine Then
+            '    td.StartPoint.StartOfLine()
+            'End If
+            'If Not td.EndPoint.AtEndOfLine Then
+            '    td.EndPoint.EndOfLine()
+            'End If
 
+            Dim sp As TextPoint = td.StartPoint
+            Dim ep As TextPoint = td.EndPoint
+            Dim editStartPt As EditPoint = sp.CreateEditPoint()
+            Dim editEndPt As EditPoint = ep.CreateEditPoint()
 
-    '        ' Set up process info.
-    '        Dim psi As New System.Diagnostics.ProcessStartInfo
-    '        psi.FileName = "d:/depot/bin/python.bat"
-    '        psi.Arguments = Environ("UtilScripts") & "/lineup.py"
-    '        psi.CreateNoWindow = True
-    '        psi.UseShellExecute = False
-    '        psi.RedirectStandardInput = True
-    '        psi.RedirectStandardOutput = True
-    '        psi.RedirectStandardError = True
+            ' Get content of the document.
+            Dim txtDoc As String = editStartPt.GetText(editEndPt)
 
-    '        ' Create the process.
-    '        Dim p As New System.Diagnostics.Process
+            ' Set up process info.
+            Dim psi As New System.Diagnostics.ProcessStartInfo
+            psi.FileName = "d:/depot/bin/python.bat"
+            psi.Arguments = Environ("UtilScripts") & "/lineup.py"
+            ErrToOutputWindow(psi.FileName & " " & psi.Arguments)
+            psi.CreateNoWindow = True
+            psi.UseShellExecute = False
+            psi.RedirectStandardInput = True
+            psi.RedirectStandardOutput = True
+            psi.RedirectStandardError = True
 
-    '        ' Associate process info with the process.
-    '        p.StartInfo = psi
+            ' Create the process.
+            Dim p As New System.Diagnostics.Process
 
-    '        ' Run the process.
-    '        Dim fStarted As Boolean = p.Start()
-    '        If Not fStarted Then _
-    '            Throw New Exception("Unable to start " & psi.FileName & " process.")
+            ' Associate process info with the process.
+            p.StartInfo = psi
 
-    '        ' Set up streams to interact with process's stdin/stdout.
-    '        Dim sw As StreamWriter = p.StandardInput
-    '        Dim sr As StreamReader = p.StandardOutput
-    '        Dim strFormattedDoc As String = Nothing
+            ' Run the process.
+            Dim fStarted As Boolean = p.Start()
+            If Not fStarted Then _
+                Throw New Exception("Unable to start " & psi.FileName & " process.")
 
-    '        ' Write content of HTML document to process's stdin.
-    '        sw.Write(selectedText)
-    '        sw.Close()
+            ' Set up streams to interact with process's stdin/stdout.
+            Dim sw As System.IO.StreamWriter = p.StandardInput
+            Dim sr As System.IO.StreamReader = p.StandardOutput
+            Dim strFormattedDoc As String = Nothing
 
-    '        ' Read process's stdout and store in strFormattedDoc.
-    '        strFormattedDoc = sr.ReadToEnd()
-    '        sr.Close()
+            ' Write content of Active Selection to process's stdin.
+            sw.Write(selectedText)
+            'sw.Write(txtDoc)
+            sw.Close()
 
-    '        ' Handle no stdout text, instead display error text.
-    '        If strFormattedDoc = "" Then
-    '            Dim srError As StreamReader = p.StandardError
-    '            Dim strError As String = srError.ReadToEnd()
-    '            srError.Close()
-    '            Throw New Exception(psi.FileName & " failed with error " _
-    '                & "information: " & strError)
-    '        End If
+            ' Read process's stdout and store in strFormattedDoc.
+            strFormattedDoc = sr.ReadToEnd()
+            sr.Close()
 
-    '        ' Replace document's original text with process's output.
-    '        'editStartPt.ReplaceText(editEndPt, strFormattedDoc, _
-    '        'CInt(vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces))
-    '        selectedText = strFormattedDoc.ToString();
+            ' Handle no stdout text, instead display error text.
+            If strFormattedDoc = "" Then
+                Dim srError As System.IO.StreamReader = p.StandardError
+                Dim strError As String = srError.ReadToEnd()
+                srError.Close()
+                Throw New Exception(psi.FileName & " failed with error " _
+                    & "information: " & strError)
+            End If
 
-    '    Catch ex As Exception
-    '        'System.Windows.Forms.MessageBox.Show(ex.ToString())
-    '        ErrToOutputWindow(ex)
-    '    End Try
-    'End Sub
+            ' Replace document's original text with process's output.
+            ' I want this one to work, but it currently replaces the whole document, not the active selection
+            'editStartPt.ReplaceText(editEndPt, strFormattedDoc, _
+            'CInt(vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces))
+
+            ''[debug] print output in output window
+            'ErrToOutputWindow(selectedText)
+
+            'selectedText = strFormattedDoc.ToString()
+            'DTE.ActiveDocument.Selection.Text = strFormattedDoc.ToString()
+
+            Dim objSel As TextSelection = DTE.ActiveDocument.Selection
+            Dim objTP As VirtualPoint = objSel.TopPoint
+            Dim objBP As VirtualPoint = objSel.BottomPoint
+            Dim objTEP As EditPoint = objTP.CreateEditPoint
+            Dim objBEP As EditPoint = objBP.CreateEditPoint
+            objTEP.ReplaceText(objBEP, strFormattedDoc, CInt(vsEPReplaceTextOptions.vsEPReplaceTextTabsSpaces))
+
+            'objTEP.Delete(objBEP)
+            'objTEP.Insert(strFormattedDoc)
+            'objTEP.Text = strFormattedDoc
+
+        Catch ex As Exception
+            'System.Windows.Forms.MessageBox.Show(ex.ToString())
+            ErrToOutputWindow(ex.ToString())
+        Finally
+            DTE.UndoContext.Close()
+        End Try
+    End Sub
 
 End Module
-
