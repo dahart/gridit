@@ -249,4 +249,11 @@ for (list,justify) in zip(lists,justifies):
 #
 # Emacs:
 #
+# ;; example: http://www.perl.com/pub/a/2005/03/31/lightning2.html
+# (defun line-up-text ()
+#   (interactive)
+#   (shell-command-on-region (point)
+#          (mark) "python $HOME/depot/scripts/bin/python/lineup/lineup.py" nil t))
+# (global-set-key "\el"      'line-up-text  )
+#
 #######################################################################
