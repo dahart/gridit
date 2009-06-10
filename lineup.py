@@ -134,6 +134,7 @@ for (list,justify) in zip(lists,justifies):
 ######################################################################
 #
 # VS.NET 2005 macro using lineup.py:
+# (Modify paths to suit - e.g. search for depot/bin below)
 #
 # 
 #     Function GetOutputWindow() As OutputWindow
@@ -248,12 +249,13 @@ for (list,justify) in zip(lists,justifies):
 #######################################################################
 #
 # Emacs:
+# (Modify paths to suit)
 #
 # ;; example: http://www.perl.com/pub/a/2005/03/31/lightning2.html
 # (defun line-up-text ()
 #   (interactive)
 #   (shell-command-on-region (point)
-#          (mark) "python $HOME/depot/scripts/bin/python/lineup/lineup.py" nil t))
+#          (mark) "python ~/depot/scripts/bin/python/lineup/lineup.py" nil t))
 # (global-set-key "\el"      'line-up-text  )
 #
 #######################################################################
