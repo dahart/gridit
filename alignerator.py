@@ -18,32 +18,20 @@ except ImportError:
     normed_rowcol = indentation.line_and_normed_pt
 
 
-# capture 'words'
-separableChars = "\[\]\{\}\(\)\;\,"
-
-matcher = r"""
-(?P<ws>\s+)                                 # white space
-|(?P<quote>(?P<q>[\'\"]).*?(?P=q))          # quoted items
-|(?P<num>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # match ints & floats - dunno if the word boundary look-around matches are still needed...
-|(?P<sep>[""" + separableChars + """])      # any separable char
-|(?P<word>[^\s""" + separableChars + """]+) # groups of non-separable, non-whitespace chars
-"""
-
-e = re.compile(matcher, re.VERBOSE)
-
 #----------------------------------------------------------------------
 
-# riffle, as in riffle a deck of cards
+# riffle, as in riffle (perfect shuffle) a deck of cards
 # produce an output list by alternately picking one item from each input list
-# meant for strings-- operator.add concatenates
+# def riffle(*args):
+#     return functools.reduce(operator.add, zip(*args))
 def riffle(*args):
-    return functools.reduce(operator.add, zip(*args))
+    return [ y for x in zip(*args) for y in x ]
 
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'num': return ''
-    return '-'
+    if x == 'num': return '>'
+    return '<'
 
 # collapse the text of whitespace pairs to a single space
 def trSpace(x):
@@ -65,55 +53,70 @@ def reduceWS(l, x):
 #----------------------------------------------------------------------
 
 class AligneratorCommand(sublime_plugin.TextCommand):
+    def __init__(self, *args, **kwargs):
+        super(AligneratorCommand, self).__init__(*args, **kwargs)
+
+        # capture 'words'
+        self.separableChars = "\[\]\{\}\(\)\;\,"
+
+        matcher = r"""
+        (?P<ws>\s+)                                 # white space
+        |(?P<quote>(?P<q>[\'\"]).*?(?P=q))          # quoted items
+        |(?P<num>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # match ints & floats - dunno if the word boundary look-around matches are still needed...
+        |(?P<sep>[""" + separableChars + """])      # any separable char
+        |(?P<word>[^\s""" + separableChars + """]+) # groups of non-separable, non-whitespace chars
+        """
+
+        self.e = re.compile(matcher, re.VERBOSE)
+
     def run(self, edit):
         # read input lines
 
         view = self.view
         sel = view.sel()
-        # print(sel)
-        if len(sel) == 0:
+
+        if len(sel) != 1: 
+            print('Alignerator: try selecting one (and only one) region')
             return
 
+        # lineRegs = []
         # for reg in sel:
-        #     sel.add(view.line(reg))
+        #     for line in view.lines(reg):
+        #         lineRegs.append(line)
 
-        if len(sel) > 1:
-            return
+        oldText = view.substr(sel[0])
 
-        lineRegs = []
-        for reg in sel:
-            for line in view.lines(reg):
-                lineRegs.append(line)
+        # lines = [ view.substr(reg) for reg in lineRegs ]
 
-        lines = [ view.substr(reg) for reg in lineRegs ]
-        # print(lines)
+        lines = oldText.split('\n')
 
-        print('Alignerating')
+        # print("lines:\n", lines)
+        # print('Alignerating')
 
         lists = []
         justifies = []
         for line in lines:
             # snag all matches
-            iter = e.finditer(line)
+            lineiter = self.e.finditer(line)
             # expand all matches by name
-            groups = [match.groupdict() for match in iter]
+            groups = [match.groupdict() for match in lineiter]
             # groups includes all non-matches- filter those out
             matches = [ [x for x in g.items() if x[1] != None][0] for g in groups ]
-            print(matches)
+            # print(matches)
 
             if len(matches) == 0:
                 lists.append([''])
                 justifies.append([''])
             else:
                 # add null ws between separable chars
-                matches = functools.reduce(operator.concat, map(trSep, matches));
+                matches = functools.reduce(operator.concat, [ trSep(m) for m in matches ]);
                 # now delete multiple whitespaces in a row - only propagate the largest WS
                 # in order for reduce to return a list of tuples, I have to listify
                 # the first element of the list of tuples, so that concatenate is operating
                 # on a list, and not on the first tuple.  get it?!?!
                 matches = functools.reduce(reduceWS, [[matches[0]]] + matches[1:]);
                 # collapse all non-zero whitespace matches to single spaces
-                (matchNames, tokenList) = zip(*map(trSpace, matches))
+                (matchNames, tokenList) = zip(*[ trSpace(m) for m in matches])
 
                 # print('matchNames:',matchNames)
                 # print('list:',tokenList)
@@ -122,34 +125,35 @@ class AligneratorCommand(sublime_plugin.TextCommand):
                 # we don't want the overall indentation to change
                 if matchNames[0] == 'ws':
                     tokenList = (matches[0][1],) + tokenList[1:]
-                justify = map(trJustify, matchNames)
+                justify = [ trJustify(name) for name in matchNames ]
 
                 # remember our text columns & justification
                 lists.append(tokenList)
                 justifies.append(justify)
 
         # compute column widths
-        maxCols = max(map(len, lists))
+        maxCols = max([len(l) for l in lists])
         widths = [0 for x in range(maxCols)]
-        justify = ['-' for x in widths]
+        # justify = ['-' for x in widths]
         for tokenList in lists:
             # zero-pad the end of the result, so that widths doesn't get truncated
             # because zip stops when the first list is empty
-            newWidths = list(map(len, tokenList)) + [0] * (maxCols-len(tokenList))
-            widths = list(map(max, zip(widths, newWidths)))
+            newWidths = [ len(t) for t in tokenList ] + [0] * (maxCols-len(tokenList))
+            widths = [ max(w) for w in zip(widths, newWidths) ]
 
         # now go back through all our lines and output with new formatting
         newLines = []
         for (tokenList,justify) in zip(lists,justifies):
             n = len(tokenList)
 
-            a = ['{}'] * n
-            # b = justify
-            # c = map(str, widths)
-            # d = ['s'] * n
+            a = ['{:'] * n
+            b = justify
+            c = [ str(w) if w > 0 else '' for w in widths ]
+            d = ['s'] * n
+            e = ['}'] * n
 
-            # fmt = ''.join(riffle(a,c))
-            fmt = ''.join(a)
+            fmt = ''.join(riffle(a,b,c,d,e))
+            # fmt = ''.join(a)
 
             # print ('fmt:', len(fmt), fmt)
             # print ('tok:', len(tokenList), tokenList)
@@ -160,10 +164,10 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         # for reg, newLine in zip(lineRegs, newLines):
         view.replace(edit, sel[0], '\n'.join(newLines))
 
-# 1 2 3 + 0    = 0;
+# 1 2 3 + 0 = 0 ;
 # 11 22 33 + 5 = 33333;
 # 111 222 333 + 555 = 3;
-
+ 
 
 def convert_to_mid_line_tabs(view, edit, tab_size, pt, length):
     spaces_end = pt + length
