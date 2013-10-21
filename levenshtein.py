@@ -44,7 +44,7 @@ def LevenshteinDistanceWithBacktracking(s, t):
             (b[i][j], d[i][j]) = min( 
                 (0, d[i-1][j]+1), 
                 (1, d[i][j-1]+1), 
-x                (2, d[i-1][j-1] + int(s[i-1] != t[j-1])),
+                (2, d[i-1][j-1] + int(s[i-1] != t[j-1])),
                 key=lambda x:x[1])
     (i, j) = (m, n)
     bt = [];
