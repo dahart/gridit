@@ -57,7 +57,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         super(AligneratorCommand, self).__init__(*args, **kwargs)
 
         # capture 'words'
-        self.separableChars = "\[\]\{\}\(\)\;\,"
+        separableChars = "\[\]\{\}\(\)\;\,"
 
         matcher = r"""
         (?P<ws>\s+)                                 # white space
@@ -75,7 +75,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         view = self.view
         sel = view.sel()
 
-        if len(sel) != 1: 
+        if len(sel) != 1:
             print('Alignerator: try selecting one (and only one) region')
             return
 
@@ -167,7 +167,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
 # 1 2 3 + 0 = 0 ;
 # 11 22 33 + 5 = 33333;
 # 111 222 333 + 555 = 3;
- 
+
 
 def convert_to_mid_line_tabs(view, edit, tab_size, pt, length):
     spaces_end = pt + length
