@@ -19,12 +19,12 @@ import operator
 separableChars = "\[\]\{\}\(\)\;\,\+\="
 
 matcher = r"""
-(?P<ws>\s+)                                 # white space
-|(?P<quote>(?P<q>[\'\"]).*?(?P=q))          # quoted items
-|(?P<num>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # match ints & floats - dunno if the word boundary look-around matches are still needed...
-|(?P<op>[-\+/\*%&\|\^]=|\+\+|--|=|&&|\|\||<<=?|>>=?|::) # operators
-|(?P<sep>[""" + separableChars + """])      # any separable char
-|(?P<word>[^\s""" + separableChars + """]+) # groups of non-separable, non-whitespace chars
+(?P<S>\s+)                                 # 'S'pace, of the white variety
+|(?P<Q>(?P<t>[\'\"]).*?(?P=t))          # 'Q'uoted items
+|(?P<N>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # 'N'ums: match ints & floats - dunno if the word boundary look-around matches are still needed...
+|(?P<O>[-\+/\*%&\|\^]=|\+\+|--|=|&&|\|\||<<=?|>>=?|::) # 'O'perators
+|(?P<C>[""" + separableChars + """])      # 'C'har: anything separable
+|(?P<W>[^\s""" + separableChars + """]+) # 'W'ord: groups of non-separable, non-whitespace chars
 """
 
 e = re.compile(matcher, re.VERBOSE)
@@ -40,23 +40,23 @@ def riffle(*args):
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'num' or x == 'mcop': return ''
+    if x == 'N' or x == 'O': return ''
     return '-'
 
 # collapse the text of whitespace pairs to a single space
 def trSpace(x):
-    if x[0] == 'ws' and len(x[1]) > 0: return (x[0],' ')
+    if x[0] == 'S' and len(x[1]) > 0: return (x[0],' ')
     return x
 
 # expand separable chars with whitespace on either side
 def trSep(x):
-    if x[0] == 'sep': return [('ws', ''), x, ('ws', '')];
+    if x[0] == 'C': return [('S', ''), x, ('S', '')];
     return [x];
 
 # replace consecutive ws's with a single one
 def reduceWS(l, x):
-    if x[0] == 'ws' and len(l) > 0 and l[-1][0] == 'ws':
-        return l[:-1] + [('ws', ' ' * max(len(x[1]), len(l[-1][1])))]
+    if x[0] == 'S' and len(l) > 0 and l[-1][0] == 'S':
+        return l[:-1] + [('S', ' ' * max(len(x[1]), len(l[-1][1])))]
     else:
         return l + [x]
 
@@ -98,9 +98,10 @@ def btedist(s, t, distfunc):
     bt.reverse()
     return (d[m][n], bt)
 
+
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0]: return 1.0
-    if m1[0] == 'ws': return 0.0
+    if m1[0] == 'S': return 0.0
     score = 0.0
     if m1[1] == '':
         score = len(m2[1])
@@ -109,6 +110,7 @@ def matchTypeDist(m1, m2):
     else:
         score = edist(m1[1], m2[1])
     return score / (1.0 + score)
+
 
 #----------------------------------------------------------------------
 
@@ -144,13 +146,13 @@ def lineup(lines):
         (d, bt) = btedist(matches, template, matchTypeDist)
         for i in xrange(len(bt)):
             if bt[i] == 1:
-                matches = matches[:i] + [('ws','')] + matches[i:]
+                matches = matches[:i] + [('S','')] + matches[i:]
 
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, list) = zip(*map(trSpace, matches))
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
-        if matchNames[0] == 'ws':
+        if matchNames[0] == 'S':
             list = (matches[0][1],) + list[1:]
         justify = map(trJustify, matchNames)
         # remember our text columns & justification
