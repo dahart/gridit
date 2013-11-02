@@ -98,37 +98,6 @@ def btedist(s, t, distfunc):
     bt.reverse()
     return (d[m][n], bt)
 
-def TestLevALigner(lines):
-    (d, bt) = btedist(lines[0], lines[1])
-    print "dist:", d
-    print "bt:", bt
-    print "zeros:", filter(lambda x:x==0, bt)
-    print "ones:", filter(lambda x:x==1, bt)
-
-    out0, out1 = lines[0], lines[1]
-
-    for i in range(len(bt)):
-        if (bt[i] == 1):
-            out0 = out0[:i] + ' ' + out0[i:]
-        if (bt[i] == 0):
-            out1 = out1[:i] + ' ' + out1[i:]
-
-    print "in0 :", lines[0]
-    print "out0:", out0
-    print "out1:", out1
-    print "in1 :", lines[1]
-
-def alignTemplate(match, template):
-    (d, bt) = btedist(m1, m2)
-    out = template
-    for i in xrange(len(bt)):
-        if bt[i] == 0:
-            out = out[:i] + ('ws', '') + out[i:]
-    return out
-
-def chardist(c1, c2):
-    return int(c1 != c2)
-
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0]: return 1.0
     if m1[0] == 'ws': return 0.0
@@ -159,21 +128,9 @@ def lineup(lines):
         matches = reduce(operator.concat, map(trSep, matches));
         # now delete multiple whitespaces in a row
         matches = reduce(reduceWS, [[matches[0]]] + matches[1:]);
-        # print matches
         allmatches.append(matches)
 
-    # # align the match types & build a template of the largest match
-    # template = [ m[0] for m in allmatches[0] ]
-    # for matches in allmatches[1:]:
-    #     matchTypes = [ m[0] for m in matches ]
-    #     (d, bt) = btedist(matchTypes, template, matchTypeDist)
-    #     out = matchTypes
-    #     for i in xrange(len(bt)):
-    #         if bt[i] == 1:
-    #             out = out[:i] + ['ws'] + out[i:]
-    #     template = out
-    #     # print 'template:', template
-
+    # we'll align all lines to the longest matches list
     template = max( allmatches, key=lambda m:len(m) )
 
     lists, justifies = [], []
@@ -183,14 +140,11 @@ def lineup(lines):
             justifies.append([''])
             continue
 
-        # print matches
-        # print template
+        # align matches & template, stuff whitespace into all missing slots
         (d, bt) = btedist(matches, template, matchTypeDist)
-        out = matches
         for i in xrange(len(bt)):
             if bt[i] == 1:
-                out = out[:i] + [('ws','')] + out[i:]
-        matches = out
+                matches = matches[:i] + [('ws','')] + matches[i:]
 
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, list) = zip(*map(trSpace, matches))
