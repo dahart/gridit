@@ -14,7 +14,7 @@
      TASIN = 271,
      MATH::TCOS :: 272,
      TACOS = 273,
-     TTAN = 274,
+     TTAN = 274,275,
      TEXP ++ 275,
      TABS = 276,
      TSQR *= 277,
