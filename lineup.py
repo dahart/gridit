@@ -5,22 +5,24 @@
 # and pads the whitespace between all the columns so everything lines up.
 # takes stdin as input, prints to stdout
 #
-# at the bottom of this file are comments about how to 
+# at the bottom of this file are comments about how to
 # use this, in macro form, for:
 # vs.net 2005
 # emacs [todo]
 #
-# 
+#
 
-import fileinput, re, operator
+import re
+import operator
 
 # capture 'words'
-separableChars = "\[\]\{\}\(\)\;\,"
+separableChars = "\[\]\{\}\(\)\;\,\+\="
 
 matcher = r"""
 (?P<ws>\s+)                                 # white space
 |(?P<quote>(?P<q>[\'\"]).*?(?P=q))          # quoted items
 |(?P<num>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # match ints & floats - dunno if the word boundary look-around matches are still needed...
+|(?P<op>[-\+/\*%&\|\^]=|\+\+|--|=|&&|\|\||<<=?|>>=?|::) # operators
 |(?P<sep>[""" + separableChars + """])      # any separable char
 |(?P<word>[^\s""" + separableChars + """]+) # groups of non-separable, non-whitespace chars
 """
@@ -29,7 +31,7 @@ e = re.compile(matcher, re.VERBOSE)
 
 #----------------------------------------------------------------------
 
-# riffle, as in riffle a deck of cards 
+# riffle, as in riffle a deck of cards
 # produce an output list by alternately picking one item from each input list
 # meant for strings-- operator.add concatenates
 def riffle(*args):
@@ -38,7 +40,7 @@ def riffle(*args):
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'num': return ''
+    if x == 'num' or x == 'mcop': return ''
     return '-'
 
 # collapse the text of whitespace pairs to a single space
@@ -58,77 +60,159 @@ def reduceWS(l, x):
     else:
         return l + [x]
 
+# http://en.wikibooks.org/wiki/Algorithm_implementation/Strings/Levenshtein_distance#C.2B.2B
+def edist(s1, s2):
+    d_curr = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        d_prev, d_curr = d_curr, [i]
+        for j, c2 in enumerate(s2):
+            d_curr.append(min(
+              d_prev[j] + (c1 != c2),
+              d_prev[j + 1] + 1,
+              d_curr[j] + 1
+            ))
+    return d_curr[len(s2)]
+
+
+# http://en.wikipedia.org/wiki/Levenshtein_distance
+def btedist(s, t, distfunc):
+    (m,n) = len(s), len(t)
+    d = [[0 for x in range(0, n+1)] for x in range(0, m+1)]
+    b = [[0 for x in range(0, n+1)] for x in range(0, m+1)]
+    for i in range(0, m+1): d[i][0] = i
+    d[0] = range(0, n+1)
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            (b[i][j], d[i][j]) = min(
+                (0, d[i-1][j]+1),
+                (1, d[i][j-1]+1),
+                (2, d[i-1][j-1] + int(s[i-1] != t[j-1])),
+                key=lambda x:x[1])
+    (i, j) = (m, n)
+    bt = [];
+    while (i >= 1 and j >= 1):
+        bt.append(b[i][j])
+        if (b[i][j] == 0): i -= 1
+        elif (b[i][j] == 1): j -= 1
+        elif (b[i][j] == 2): i -= 1; j -= 1
+    bt.reverse()
+    return (d[m][n], bt)
+
+def TestLevALigner(lines):
+    (d, bt) = btedist(lines[0], lines[1])
+    print "dist:", d
+    print "bt:", bt
+    print "zeros:", filter(lambda x:x==0, bt)
+    print "ones:", filter(lambda x:x==1, bt)
+
+    out0, out1 = lines[0], lines[1]
+
+    for i in range(len(bt)):
+        if (bt[i] == 1):
+            out0 = out0[:i] + ' ' + out0[i:]
+        if (bt[i] == 0):
+            out1 = out1[:i] + ' ' + out1[i:]
+
+    print "in0 :", lines[0]
+    print "out0:", out0
+    print "out1:", out1
+    print "in1 :", lines[1]
+
+def alignTemplate(match, template):
+    (d, bt) = btedist(m1, m2)
+    out = template
+    for i in xrange(len(bt)):
+        if bt[i] == 0:
+            out = out[:i] + ('ws', '') + out[i:]
+    return out
+
 #----------------------------------------------------------------------
 
-# read input lines
-lines = []
-try:
-    for line in fileinput.input():
-        line = line.rstrip() # chomp & eat right-side whitespace
-        lines.append(line)
-except KeyboardInterrupt:
-    pass
-
-
-
-lists = []
-justifies = []
-for line in lines:
-    # snag all matches
-    iter = e.finditer(line)
-    # expand all matches by name
-    groups = [match.groupdict() for match in iter]
-    # groups includes all non-matches- filter those out
-    matches = [ filter(lambda x:x[1] != None, g.iteritems())[0] for g in groups ]
-
-    if len(matches) == 0:
-        lists.append([''])
-        justifies.append([''])
-    else:
+def lineup(lines):
+    allmatches = []
+    for line in lines:
+        # snag all matches
+        iter = e.finditer(line)
+        # expand all matches by name
+        groups = [match.groupdict() for match in iter]
+        # groups includes all non-matches- filter those out
+        matches = [ filter(lambda x:x[1] != None, g.iteritems())[0] for g in groups ]
+        if not matches:
+            allmatches.append(matches)
+            continue
         # add null ws between separable chars
         matches = reduce(operator.concat, map(trSep, matches));
-        # now delete multiple whitespaces in a row - only propagate the largest WS
-        # in order for reduce to return a list of tuples, I have to listify
-        # the first element of the list of tuples, so that concatenate is operating
-        # on a list, and not on the first tuple.  get it?!?!
+        # now delete multiple whitespaces in a row
         matches = reduce(reduceWS, [[matches[0]]] + matches[1:]);
+        # print matches
+        allmatches.append(matches)
+
+    # align the matches
+    template = matches[0]
+    for matches in allmatches[1:]:
+
+
+    lists, justifies = [], []
+    for matches in allmatches:
+        if len(matches) == 0:
+            lists.append([''])
+            justifies.append([''])
+            continue
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, list) = zip(*map(trSpace, matches))
-
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
-        if matchNames[0] == 'ws': 
+        if matchNames[0] == 'ws':
             list = (matches[0][1],) + list[1:]
         justify = map(trJustify, matchNames)
-
         # remember our text columns & justification
         lists.append(list)
         justifies.append(justify)
 
+    # compute column widths
+    maxCols = max(map(len, lists))
+    widths = [0 for x in range(maxCols)]
+    justify = ['-' for x in widths]
+    for list in lists:
+        # zero-pad the end of the result, so that widths doesn't get truncated
+        # because zip stops when the first list is empty
+        newWidths = map(len, list) + [0] * (maxCols-len(list))
+        widths = map(max, zip(widths, newWidths))
 
-# compute column widths
-maxCols = max(map(len, lists))
-widths = [0 for x in range(maxCols)]
-justify = ['-' for x in widths]
-for list in lists:
-    # zero-pad the end of the result, so that widths doesn't get truncated 
-    # because zip stops when the first list is empty
-    newWidths = map(len, list) + [0] * (maxCols-len(list))
-    widths = map(max, zip(widths, newWidths))
+    # now go back through all our lines and output with new formatting
+    alines = []
+    for (list,justify) in zip(lists,justifies):
+        n = len(list)
+
+        a = ['%'] * n
+        b = justify
+        c = map(str, widths)
+        d = ['s'] * n
+
+        fmt = ''.join(riffle(a,b,c,d))
+        alines.append( fmt % tuple(list) )
+
+    return alines
 
 
-# now go back through all our lines and output with new formatting
-for (list,justify) in zip(lists,justifies):
-    n = len(list)
 
-    a = ['%'] * n
-    b = justify
-    c = map(str, widths)
-    d = ['s'] * n
+if __name__ == "__main__":
+    import fileinput
 
-    fmt = ''.join(riffle(a,b,c,d))
+    # read input lines
+    lines = []
+    try:
+        for line in fileinput.input():
+            line = line.rstrip() # chomp & eat right-side whitespace
+            lines.append(line)
+    except KeyboardInterrupt:
+        pass
 
-    print fmt % tuple(list)
+    alines = lineup(lines)
+
+    for line in alines:
+        print line
+
 
 
 ######################################################################
@@ -136,7 +220,7 @@ for (list,justify) in zip(lists,justifies):
 # VS.NET 2005 macro using lineup.py:
 # (Modify paths to suit - e.g. search for depot/bin below)
 #
-# 
+#
 #     Function GetOutputWindow() As OutputWindow
 #         Return DTE.Windows.Item(Constants.vsWindowKindOutput).Object()
 #     End Function
