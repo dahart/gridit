@@ -135,10 +135,10 @@ def lineup(lines):
     # we'll align all lines to the longest matches list
     template = max( allmatches, key=lambda m:len(m) )
 
-    lists, justifies = [], []
+    chunks, justifies = [], []
     for matches in allmatches:
         if len(matches) == 0:
-            lists.append([''])
+            chunks.append([''])
             justifies.append([''])
             continue
 
@@ -149,30 +149,30 @@ def lineup(lines):
                 matches = matches[:i] + [('S','')] + matches[i:]
 
         # collapse all non-zero whitespace matches to single spaces
-        (matchNames, list) = zip(*map(trSpace, matches))
+        (matchNames, chunk) = zip(*map(trSpace, matches))
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
         if matchNames[0] == 'S':
-            list = (matches[0][1],) + list[1:]
+            chunk = (matches[0][1],) + chunk[1:]
         justify = map(trJustify, matchNames)
         # remember our text columns & justification
-        lists.append(list)
+        chunks.append(chunk)
         justifies.append(justify)
 
     # compute column widths
-    maxCols = max(map(len, lists))
+    maxCols = max(map(len, chunks))
     widths = [0 for x in range(maxCols)]
     justify = ['-' for x in widths]
-    for list in lists:
+    for chunk in chunks:
         # zero-pad the end of the result, so that widths doesn't get truncated
-        # because zip stops when the first list is empty
-        newWidths = map(len, list) + [0] * (maxCols-len(list))
+        # because zip stops when the first chunk is empty
+        newWidths = map(len, chunk) + [0] * (maxCols-len(chunk))
         widths = map(max, zip(widths, newWidths))
 
     # now go back through all our lines and output with new formatting
     alines = []
-    for (list,justify) in zip(lists,justifies):
-        n = len(list)
+    for (chunk,justify) in zip(chunks,justifies):
+        n = len(chunk)
 
         a = ['%'] * n
         b = justify
@@ -180,7 +180,7 @@ def lineup(lines):
         d = ['s'] * n
 
         fmt = ''.join(riffle(a,b,c,d))
-        alines.append( fmt % tuple(list) )
+        alines.append( fmt % tuple(chunk) )
 
     return alines
 
@@ -193,8 +193,7 @@ if __name__ == "__main__":
     lines = []
     try:
         for line in fileinput.input():
-            line = line.rstrip() # chomp & eat right-side whitespace
-            lines.append(line)
+            lines.append(line.rstrip()) # chomp & eat right-side whitespace
     except KeyboardInterrupt:
         pass
 
