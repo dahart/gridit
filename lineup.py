@@ -86,7 +86,7 @@ def btedist(s, t, distfunc):
             (b[i][j], d[i][j]) = min(
                 (0, d[i-1][j]+1),
                 (1, d[i][j-1]+1),
-                (2, d[i-1][j-1] + int(s[i-1] != t[j-1])),
+                (2, d[i-1][j-1] + distfunc(s[i-1], t[j-1])),
                 key=lambda x:x[1])
     (i, j) = (m, n)
     bt = [];
@@ -126,6 +126,21 @@ def alignTemplate(match, template):
             out = out[:i] + ('ws', '') + out[i:]
     return out
 
+def chardist(c1, c2):
+    return int(c1 != c2)
+
+def matchTypeDist(m1, m2):
+    if m1[0] != m2[0]: return 1.0
+    if m1[0] == 'ws': return 0.0
+    score = 0.0
+    if m1[1] == '':
+        score = len(m2[1])
+    elif m2[1] == '':
+        score = len(m1[1])
+    else:
+        score = edist(m1[1], m2[1])
+    return score / (1.0 + score)
+
 #----------------------------------------------------------------------
 
 def lineup(lines):
@@ -147,10 +162,19 @@ def lineup(lines):
         # print matches
         allmatches.append(matches)
 
-    # align the matches
-    template = matches[0]
-    for matches in allmatches[1:]:
+    # # align the match types & build a template of the largest match
+    # template = [ m[0] for m in allmatches[0] ]
+    # for matches in allmatches[1:]:
+    #     matchTypes = [ m[0] for m in matches ]
+    #     (d, bt) = btedist(matchTypes, template, matchTypeDist)
+    #     out = matchTypes
+    #     for i in xrange(len(bt)):
+    #         if bt[i] == 1:
+    #             out = out[:i] + ['ws'] + out[i:]
+    #     template = out
+    #     # print 'template:', template
 
+    template = max( allmatches, key=lambda m:len(m) )
 
     lists, justifies = [], []
     for matches in allmatches:
@@ -158,6 +182,16 @@ def lineup(lines):
             lists.append([''])
             justifies.append([''])
             continue
+
+        # print matches
+        # print template
+        (d, bt) = btedist(matches, template, matchTypeDist)
+        out = matches
+        for i in xrange(len(bt)):
+            if bt[i] == 1:
+                out = out[:i] + [('ws','')] + out[i:]
+        matches = out
+
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, list) = zip(*map(trSpace, matches))
         # except restore the very first column if it was whitespace
