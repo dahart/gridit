@@ -29,7 +29,8 @@ def riffle(*args):
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'N' or x == 'O': return '>'
+    if x == 'N': return '>'
+    # if x == 'O': return '>'
     return '<'
 
 # collapse the text of whitespace pairs to a single space
@@ -139,8 +140,8 @@ class AligneratorCommand(sublime_plugin.TextCommand):
             groups = [ match.groupdict() for match in lineiter ]
             # groups includes all non-matches- filter those out
             matches = [ [x for x in g.items() if x[1] != None][0] for g in groups ]
-            if not matches:
-                allmatches.append(matches)
+            if not matches or (len(matches) == 1 and matches[0][0] == 'S'):
+                allmatches.append([])
                 continue
             # add null ws between separable chars
             matches = [ m for mg in matches for m in trSep(mg) ]
@@ -154,8 +155,8 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         chunks, justifies = [], []
         for matches in allmatches:
             if not matches:
-                # chunks.append([''])
-                # justifies.append([''])
+                chunks.append([])
+                justifies.append([])
                 continue
             # align matches & template, stuff whitespace into all missing slots
             (d, bt) = btedist(matches, template, matchTypeDist)
@@ -176,7 +177,6 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         # compute column widths
         maxCols = max([len(l) for l in chunks])
         widths = [0 for x in range(maxCols)]
-        # justify = ['-' for x in widths]
         for chunk in chunks:
             # zero-pad the end of the result, so that widths doesn't get truncated
             # because zip stops when the first list is empty
@@ -185,25 +185,25 @@ class AligneratorCommand(sublime_plugin.TextCommand):
 
         # now go back through all our lines and output with new formatting
         newLines = []
-        if not chunks:
-            newLines.append('')
-        else:
-            for (chunk, justify) in zip(chunks, justifies):
-                n = len(chunk)
-                a = ['{:'] * n
-                b = justify
-                c = [ str(w) if w > 0 else '' for w in widths ]
-                d = ['s'] * n
-                e = ['}'] * n
-                fmt = ''.join(riffle(a,b,c,d,e))
-                newLines.append(fmt.format(*chunk))
+        for (chunk, justify) in zip(chunks, justifies):
+            if not chunk:
+                newLines.append('')
+                continue
+            n = len(chunk)
+            a = ['{:'] * n
+            b = justify
+            c = [ str(w) if w > 0 else '' for w in widths ]
+            d = ['s'] * n
+            e = ['}'] * n
+            fmt = ''.join(riffle(a,b,c,d,e))
+            newLines.append(fmt.format(*chunk))
 
         view.replace(edit, sel[0], '\n'.join(newLines))
 
-                # 1 2 3 + 0 = 0 ;
-                # 11 22 33 + 5 = 33333;
+                # 1 2 3 + 0 = 0;
+                # 11 22 33 + 5 = 33333 ;
                 # 111 222 333 + 555 = 3;
-                # 111 222 333 + 555 + 6667 = 3;
+                # 111 222 333 + 555 + 6667 = 3 ;
 
 
 def convert_to_mid_line_tabs(view, edit, tab_size, pt, length):

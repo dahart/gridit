@@ -42,7 +42,8 @@ def riffle(*args):
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'N' or x == 'O': return ''
+    if x == 'N': return ''
+    # if x == 'O': return ''
     return '-'
 
 # collapse the text of whitespace pairs to a single space
@@ -103,7 +104,7 @@ def btedist(s, t, distfunc):
 
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0]: return 1.0
-    if m1[0] == 'S': return 0.0
+    if m1[0] == 'S'  : return 0.0
     score = 0.0
     if m1[1] == '':
         score = len(m2[1])
@@ -125,11 +126,10 @@ def lineup(lines):
         groups = [match.groupdict() for match in iter]
         # groups includes all non-matches- filter those out
         matches = [ filter(lambda x:x[0] != 'qc' and x[1], g.iteritems())[0] for g in groups ]
-        if not matches:
-            allmatches.append(matches)
+        if not matches or (len(matches) == 1 and matches[0][0] == 'S'):
+            allmatches.append([])
             continue
         # add null ws between separable chars
-        # matches = reduce(operator.concat, map(trSep, matches))
         matches = [ m for mg in matches for m in trSep(mg) ]
         # now delete multiple whitespaces in a row
         matches = reduce(reduceWS, [[matches[0]]] + matches[1:])
@@ -141,16 +141,14 @@ def lineup(lines):
     chunks, justifies = [], []
     for matches in allmatches:
         if len(matches) == 0:
-            chunks.append([''])
-            justifies.append([''])
+            chunks.append([])
+            justifies.append([])
             continue
-
         # align matches & template, stuff whitespace into all missing slots
         (d, bt) = btedist(matches, template, matchTypeDist)
         for i in xrange(len(bt)):
             if bt[i] == 1:
                 matches = matches[:i] + [('S','')] + matches[i:]
-
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, chunk) = zip(*map(trSpace, matches))
         # except restore the very first column if it was whitespace
@@ -163,9 +161,8 @@ def lineup(lines):
         justifies.append(justify)
 
     # compute column widths
-    maxCols = max(map(len, chunks))
+    maxCols = max([len(l) for l in chunks])
     widths = [0 for x in range(maxCols)]
-    justify = ['-' for x in widths]
     for chunk in chunks:
         # zero-pad the end of the result, so that widths doesn't get truncated
         # because zip stops when the first chunk is empty
@@ -173,19 +170,20 @@ def lineup(lines):
         widths = map(max, zip(widths, newWidths))
 
     # now go back through all our lines and output with new formatting
-    alines = []
+    newLines = []
     for (chunk,justify) in zip(chunks,justifies):
+        if not chunk:
+            newLines.append('')
+            continue
         n = len(chunk)
-
         a = ['%'] * n
         b = justify
         c = map(str, widths)
         d = ['s'] * n
-
         fmt = ''.join(riffle(a,b,c,d))
-        alines.append( fmt % tuple(chunk) )
+        newLines.append( fmt % tuple(chunk) )
 
-    return alines
+    return newLines
 
 
 
@@ -200,9 +198,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 
-    alines = lineup(lines)
+    newLines = lineup(lines)
 
-    for line in alines:
+    for line in newLines:
         print line
 
 
