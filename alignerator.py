@@ -90,14 +90,20 @@ def btedist(s, t, distfunc):
 
 
 def matchTypeDist(m1, m2):
-    if m1[0] != m2[0]: return 1.0
-    if m1[0] == 'S'  : return 0.0
-    score = 0.0
-    if   m1[1] == '' : score = len  (       m2[1])
-    elif m2[1] == '' : score = len  (m1[1]       )
-    else             : score = edist(m1[1], m2[1])
+    if m1[0] != m2[0] :
+        # if m1[0] == 'S' or m2[0] == 'S': return 0.1
+        return 1
+    if m1[0] == 'S' : return 0
+    # if m1[0] == 'C': return 0
+    # if m1[0] == 'O': return 0
+    if m1[1] == m2[1] : return 0
+    return 1
 
-    return score / (1.0 + score)
+    # score = 0.0
+    # if   m1 [     1 ]     == '' : score = len ( m2[1] )
+    # elif m2 [     1 ]     == '' : score = len ( m1[1] )
+    # else :  score = edist (  m1 [     1 ]     , m2[1] )
+    # return score / (1.0 + score)
 
 #----------------------------------------------------------------------
 
@@ -106,7 +112,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         super(AligneratorCommand, self).__init__(*args, **kwargs)
 
         # capture 'words'
-        separableChars = r"""\[\]\{\}\(\)\;\,"""
+        separableChars = r"""\[\]\{\}\(\)\;\,\=\+"""
         quoteChars = r"""\'\""""
 
         # |(?P<O>[-\+/\*%&\|\^]=|=|&&|\|\||<<=?|>>=?|::)       # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
@@ -114,7 +120,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         matcher = r"""(?P<S>\s+)                               # 'S'pace, of the white variety
         |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
         |(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
-        |(?P<O>[-\+/\*%&\|\^]=|\[\]|\{\}|\(\))                 # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
+        |(?P<O>[-\+/\*%&\|\^=]=|\[\]|\{\}|\(\)|\+\+|<<=|>>=)   # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
         |(?P<C>[""" + separableChars + r"""])                  # 'C'har: anything separable
         |(?P<W>[^\s""" + quoteChars + separableChars + r"""]+) # 'W'ord: groups of non-separable, non-whitespace chars
         """
