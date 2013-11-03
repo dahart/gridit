@@ -116,9 +116,10 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         quoteChars = r"""\'\""""
 
         # |(?P<O>[-\+/\*%&\|\^]=|=|&&|\|\||<<=?|>>=?|::)       # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
+        # |(?P<Q>(?P<qg>(?P<qc>[\'\"])+)([^\(?P=qc)\\]|\\.)*?(?P=qg))        # 'Q'uoted items
 
         matcher = r"""(?P<S>\s+)                               # 'S'pace, of the white variety
-        |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
+        |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))              # 'Q'uoted items
         |(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
         |(?P<O>[-\+/\*%&\|\^=]=|\[\]|\{\}|\(\)|\+\+|<<=|>>=)   # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
         |(?P<C>[""" + separableChars + r"""])                  # 'C'har: anything separable
@@ -145,7 +146,8 @@ class AligneratorCommand(sublime_plugin.TextCommand):
             # expand all matches by name
             groups = [ match.groupdict() for match in lineiter ]
             # groups includes all non-matches- filter those out
-            matches = [ [x for x in g.items() if x[1] != None][0] for g in groups ]
+            # strip out sub-groups, e.g. 'qc', by ensuring the group name is 1 character
+            matches = [ [x for x in g.items() if x[1] and len(x[0]) == 1][0] for g in groups ]
             if not matches or (len(matches) == 1 and matches[0][0] == 'S'):
                 allmatches.append([])
                 continue
@@ -157,6 +159,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
 
         # we'll align all lines to the longest matches list
         template = max( allmatches, key=lambda m:len(m) )
+        if template and template[0][0] != 'S': template = [('S', '')] + template
 
         chunks, justifies = [], []
         for matches in allmatches:
@@ -164,11 +167,16 @@ class AligneratorCommand(sublime_plugin.TextCommand):
                 chunks.append([])
                 justifies.append([])
                 continue
+            # enforce the first column not changing by separating it from the rest
+            if matches[0][0] != 'S': matches = [('S','')] + matches
+            matchesHead  , matchesTail  = matches  [:2], matches  [2:]
+            templateHead , templateTail = template [:2], template [2:]
             # align matches & template, stuff whitespace into all missing slots
-            (d, bt) = btedist(matches, template, matchTypeDist)
+            (d, bt) = btedist(matchesTail, templateTail, matchTypeDist)
             for i in range(len(bt)):
                 if bt[i] == 1:
-                    matches = matches[:i] + [('S','')] + matches[i:]
+                    matchesTail = matchesTail[:i] + [('S','')] + matchesTail[i:]
+            matches = matchesHead + matchesTail
             # collapse all non-zero whitespace matches to single spaces
             (matchNames, chunk) = zip(*[ trSpace(m) for m in matches])
             # except restore the very first column if it was whitespace
@@ -205,11 +213,6 @@ class AligneratorCommand(sublime_plugin.TextCommand):
             newLines.append(fmt.format(*chunk))
 
         view.replace(edit, sel[0], '\n'.join(newLines))
-
-                # 1 2 3 + 0 = 0;
-                # 11 22 33 + 5 = 33333 ;
-                # 111 222 333 + 555 = 3;
-                # 111 222 333 + 555 + 6667 = 3 ;
 
 
 def convert_to_mid_line_tabs(view, edit, tab_size, pt, length):

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#
+#!/usr/bin/env python #
 # line up columny sections of text (code)
 # this script assumes that each line has the same number of 'columns'
 # and pads the whitespace between all the columns so everything lines up.
@@ -129,7 +128,8 @@ def lineup(lines):
         # expand all matches by name
         groups = [match.groupdict() for match in iter]
         # groups includes all non-matches- filter those out
-        matches = [ filter(lambda x:x[0] != 'qc' and x[1], g.iteritems())[0] for g in groups ]
+        # strip out sub-groups, e.g. 'qc', by ensuring the group name is 1 character
+        matches = [ [x for x in g.items() if x[1] and len(x[0]) == 1][0] for g in groups ]
         if not matches or (len(matches) == 1 and matches[0][0] == 'S'):
             allmatches.append([])
             continue
@@ -141,6 +141,7 @@ def lineup(lines):
 
     # we'll align all lines to the longest matches list
     template = max( allmatches, key=lambda m:len(m) )
+    if template and template[0][0] != 'S': template = [('S', '')] + template
 
     chunks, justifies = [], []
     for matches in allmatches:
@@ -148,11 +149,16 @@ def lineup(lines):
             chunks.append([])
             justifies.append([])
             continue
+        # enforce the first column not changing by separating it from the rest
+        if matches[0][0] != 'S': matches = [('S','')] + matches
+        matchesHead  , matchesTail  = matches  [:2], matches  [2:]
+        templateHead , templateTail = template [:2], template [2:]
         # align matches & template, stuff whitespace into all missing slots
-        (d, bt) = btedist(matches, template, matchTypeDist)
+        (d, bt) = btedist(matchesTail, templateTail, matchTypeDist)
         for i in xrange(len(bt)):
             if bt[i] == 1:
-                matches = matches[:i] + [('S','')] + matches[i:]
+                matchesTail = matchesTail [:i] + [('S' ,'')] + matchesTail [i:]
+        matches = matchesHead + matchesTail
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, chunk) = zip(*map(trSpace, matches))
         # except restore the very first column if it was whitespace
