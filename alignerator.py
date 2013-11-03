@@ -73,16 +73,16 @@ def btedist(s, t, distfunc):
     for i in range(1, m+1):
         for j in range(1, n+1):
             (b[i][j], d[i][j]) = min(
-                (0, d[i-1][j]+1),
-                (1, d[i][j-1]+1),
-                (2, d[i-1][j-1] + distfunc(s[i-1], t[j-1])),
+                ( 0, d[i-1][j  ] + 1                        ),
+                ( 1, d[i  ][j-1] + 1                        ),
+                ( 2, d[i-1][j-1] + distfunc(s[i-1], t[j-1]) ),
                 key=lambda x:x[1])
     (i, j) = (m, n)
     bt = [];
     while (i >= 1 and j >= 1):
         bt.append(b[i][j])
-        if (b[i][j] == 0): i -= 1
-        elif (b[i][j] == 1): j -= 1
+        if   (b[i][j] == 0): i -= 1
+        elif (b[i][j] == 1):         j -= 1
         elif (b[i][j] == 2): i -= 1; j -= 1
     bt.reverse()
     return (d[m][n], bt)
@@ -90,14 +90,12 @@ def btedist(s, t, distfunc):
 
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0]: return 1.0
-    if m1[0] == 'S': return 0.0
+    if m1[0] == 'S'  : return 0.0
     score = 0.0
-    if m1[1] == '':
-        score = len(m2[1])
-    elif m2[1] == '':
-        score = len(m1[1])
-    else:
-        score = edist(m1[1], m2[1])
+    if   m1[1] == '' : score = len  (       m2[1])
+    elif m2[1] == '' : score = len  (m1[1]       )
+    else             : score = edist(m1[1], m2[1])
+
     return score / (1.0 + score)
 
 #----------------------------------------------------------------------
@@ -139,7 +137,6 @@ class AligneratorCommand(sublime_plugin.TextCommand):
             lineiter = self.e.finditer(line)
             # expand all matches by name
             groups = [ match.groupdict() for match in lineiter ]
-            print(groups)
             # groups includes all non-matches- filter those out
             matches = [ [x for x in g.items() if x[1] != None][0] for g in groups ]
             if not matches:
@@ -149,7 +146,6 @@ class AligneratorCommand(sublime_plugin.TextCommand):
             matches = [ m for mg in matches for m in trSep(mg) ]
             # now delete multiple whitespaces in a row
             matches = functools.reduce(reduceWS, [[matches[0]]] + matches[1:])
-            print(matches)
             allmatches.append(matches)
 
         # we'll align all lines to the longest matches list
@@ -158,8 +154,8 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         chunks, justifies = [], []
         for matches in allmatches:
             if not matches:
-                chunks.append([''])
-                justifies.append([''])
+                # chunks.append([''])
+                # justifies.append([''])
                 continue
             # align matches & template, stuff whitespace into all missing slots
             (d, bt) = btedist(matches, template, matchTypeDist)
@@ -189,15 +185,18 @@ class AligneratorCommand(sublime_plugin.TextCommand):
 
         # now go back through all our lines and output with new formatting
         newLines = []
-        for (chunk, justify) in zip(chunks, justifies):
-            n = len(chunk)
-            a = ['{:'] * n
-            b = justify
-            c = [ str(w) if w > 0 else '' for w in widths ]
-            d = ['s'] * n
-            e = ['}'] * n
-            fmt = ''.join(riffle(a,b,c,d,e))
-            newLines.append(fmt.format(*chunk))
+        if not chunks:
+            newLines.append('')
+        else:
+            for (chunk, justify) in zip(chunks, justifies):
+                n = len(chunk)
+                a = ['{:'] * n
+                b = justify
+                c = [ str(w) if w > 0 else '' for w in widths ]
+                d = ['s'] * n
+                e = ['}'] * n
+                fmt = ''.join(riffle(a,b,c,d,e))
+                newLines.append(fmt.format(*chunk))
 
         view.replace(edit, sel[0], '\n'.join(newLines))
 
