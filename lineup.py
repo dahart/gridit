@@ -16,15 +16,17 @@ import re
 import operator
 
 # capture 'words'
-separableChars = "\[\]\{\}\(\)\;\,\+\="
+separableChars = r"""\[\]\{\}\(\)\;\,"""
+quoteChars = r"""\'\""""
 
-matcher = r"""
-(?P<S>\s+)                                 # 'S'pace, of the white variety
-|(?P<Q>(?P<t>[\'\"]).*?(?P=t))          # 'Q'uoted items
-|(?P<N>[+-]?(?<=\b)((\d+(\.\d*)?)|\.\d+)([eE][+-]?[0-9]+|f)?(?=\b)) # 'N'ums: match ints & floats - dunno if the word boundary look-around matches are still needed...
-|(?P<O>[-\+/\*%&\|\^]=|\+\+|--|=|&&|\|\||<<=?|>>=?|::) # 'O'perators
-|(?P<C>[""" + separableChars + """])      # 'C'har: anything separable
-|(?P<W>[^\s""" + separableChars + """]+) # 'W'ord: groups of non-separable, non-whitespace chars
+# |(?P<O>[-\+/\*%&\|\^]=|=|&&|\|\||<<=?|>>=?|::)       # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
+
+matcher = r"""(?P<S>\s+)                               # 'S'pace, of the white variety
+|(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
+|(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
+|(?P<O>[-\+/\*%&\|\^]=|\[\]|\{\}|\(\))                 # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
+|(?P<C>[""" + separableChars + r"""])                  # 'C'har: anything separable
+|(?P<W>[^\s""" + quoteChars + separableChars + r"""]+) # 'W'ord: groups of non-separable, non-whitespace chars
 """
 
 e = re.compile(matcher, re.VERBOSE)
@@ -122,14 +124,15 @@ def lineup(lines):
         # expand all matches by name
         groups = [match.groupdict() for match in iter]
         # groups includes all non-matches- filter those out
-        matches = [ filter(lambda x:x[1] != None, g.iteritems())[0] for g in groups ]
+        matches = [ filter(lambda x:x[0] != 'qc' and x[1], g.iteritems())[0] for g in groups ]
         if not matches:
             allmatches.append(matches)
             continue
         # add null ws between separable chars
-        matches = reduce(operator.concat, map(trSep, matches));
+        # matches = reduce(operator.concat, map(trSep, matches))
+        matches = [ m for mg in matches for m in trSep(mg) ]
         # now delete multiple whitespaces in a row
-        matches = reduce(reduceWS, [[matches[0]]] + matches[1:]);
+        matches = reduce(reduceWS, [[matches[0]]] + matches[1:])
         allmatches.append(matches)
 
     # we'll align all lines to the longest matches list
@@ -154,7 +157,7 @@ def lineup(lines):
         # we don't want the overall indentation to change
         if matchNames[0] == 'S':
             chunk = (matches[0][1],) + chunk[1:]
-        justify = map(trJustify, matchNames)
+        justify = [ trJustify(name) for name in matchNames ]
         # remember our text columns & justification
         chunks.append(chunk)
         justifies.append(justify)
