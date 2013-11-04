@@ -8,6 +8,7 @@
 **    [ ] add support for sublime settings
 ***   [ ] user options
 ***   [ ] read sublime language settings when aligning: keywords, operators, separables
+***   [ ] add support for comments
 ***   [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
 ****  [ ] can i make sublime replace tabs on my selection?
 ****  [ ] integrate sublime settings as command line flags & args to the module function
@@ -16,4 +17,6 @@
 *     [ ] possible features
 **    [ ] only operate on lines matching the template to within say 50%
 **    [ ] maybe reset alignment when more than one line doesn't match the template
-*     [ ] fix html indentation - I saw the initial indentation break
+*     [ ] bugs
+**    [ ] rstrip all the output
+**    [ ] fix html indentation - I saw the initial indentation break
