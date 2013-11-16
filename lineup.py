@@ -1,10 +1,11 @@
 #!/usr/bin/python
-#
-# line up columny sections of text (code)
-# this script assumes that each line has the same number of 'columns'
-# and pads the whitespace between all the columns so everything lines up.
-# takes stdin as input, prints to stdout
-#
+
+"""
+line up columny sections of text (code)
+this script assumes that each line has the same number of 'columns'
+and pads the whitespace between all the columns so everything lines up in a grid
+takes stdin as input, prints to stdout
+"""
 
 import functools
 import re
@@ -16,15 +17,15 @@ import re
 # also, my rule is that tokens have a 1 character name
 # groups to discard can be named with more than 1 character
 
-separableChars = r"""\[\]\{\}\(\)\;\,\=\+"""
-quoteChars     = r"""\'\""""
-comments       = r"""//.*$|\#.*$|/\*.*\*/"""
+separableChars = r'\[\]\{\}\(\)\;\,\=\+'
+quoteChars     = r'\'\"'
+comments       = r'//.*$|\#.*$|/\*.*\*/'
 
 tokenRE = r"""(?P<W>\s+)                               # 'W'hite space
 |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
 |(?P<C>(""" + comments + r"""))                        # 'C'omments
 |(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
-|(?P<O>[-\+/\*%&\|\^=]=|\[\]|\{\}|\(\)|\+\+|>>=|<<=)   # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
+|(?P<O>[-\+/\*%&\|\^=\!]=|\[\]|\{\}|\(\)|\+\+|>>=|<<=) # 'O'perators- we only need to identify non-breakable groups of separable chars
 |(?P<S>[""" + separableChars + r"""])                  # 'S'eparable characters
 |(?P<G>[^\s""" + quoteChars + separableChars + r"""]+) # 'G'roups of non-separable, non-whitespace chars
 """
