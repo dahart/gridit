@@ -9,21 +9,27 @@
 import functools
 import re
 
-# capture 'words'
+
+# tokenRE is generic regex to capture all tokens
+# it is assumed that whitespace is allowed to appear between any pair of tokens
+# so, we have to capture any sequences that can't be broken in this regex
+# also, my rule is that tokens have a 1 character name
+# groups to discard can be named with more than 1 character
+
 separableChars = r"""\[\]\{\}\(\)\;\,\=\+"""
 quoteChars     = r"""\'\""""
 comments       = r"""//.*$|\#.*$|/\*.*\*/"""
 
-matcher = r"""(?P<W>\s+)                               # 'W'hite space
+tokenRE = r"""(?P<W>\s+)                               # 'W'hite space
 |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
-|(?P<C>(""" + comments + r"""))                        # line 'C'omments
+|(?P<C>(""" + comments + r"""))                        # 'C'omments
 |(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
 |(?P<O>[-\+/\*%&\|\^=]=|\[\]|\{\}|\(\)|\+\+|>>=|<<=)   # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
 |(?P<S>[""" + separableChars + r"""])                  # 'S'eparable characters
 |(?P<G>[^\s""" + quoteChars + separableChars + r"""]+) # 'G'roups of non-separable, non-whitespace chars
 """
 
-exp = re.compile(matcher, re.VERBOSE)
+exp = re.compile(tokenRE, re.VERBOSE)
 
 #----------------------------------------------------------------------
 
@@ -56,20 +62,6 @@ def reduceWS(l, x):
     else:
         return l + [x]
 
-# http://en.wikibooks.org/wiki/Algorithm_implementation/Strings/Levenshtein_distance#C.2B.2B
-def edist(s1, s2):
-    d_curr = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
-        d_prev, d_curr = d_curr, [i]
-        for j, c2 in enumerate(s2):
-            d_curr.append(min(
-              d_prev[j] + (c1 != c2),
-              d_prev[j + 1] + 1,
-              d_curr[j] + 1
-            ))
-    return d_curr[len(s2)]
-
-
 # http://en.wikipedia.org/wiki/Levenshtein_distance
 def btedist(s, t, distfunc):
     (m,n) = len(s), len(t)
@@ -97,19 +89,10 @@ def btedist(s, t, distfunc):
 
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0] :
-        # if m1[0] == 'W' or m2[0] == 'W': return 0.1
         return 1
     if m1[0] == 'W' or m2[0] == 'W': return 0
-    # if m1[0] == 'S': return 0
-    # if m1[0] == 'O': return 0
     if m1[1] == m2[1] : return 0
     return 1
-
-    # score = 0.0
-    # if m1[1] == '':  score = len(m2[1])
-    # elif m2[1] == '':score = len(m1[1])
-    # else:            score = edist(m1[1], m2[1])
-    # return score / (1.0 + score)
 
 
 #----------------------------------------------------------------------
@@ -119,16 +102,20 @@ def lineup(lines):
     for line in lines:
         # snag all matches
         lineiter = exp.finditer(line)
+
         # expand all matches by name
         groups = [ match.groupdict() for match in lineiter ]
+
         # groups includes all non-matches- filter those out
         # strip out sub-groups, e.g. 'qc', by ensuring the group name is 1 character
         matches = [ [x for x in g.items() if x[1] and len(x[0]) == 1][0] for g in groups ]
         if not matches or (len(matches) == 1 and matches[0][0] == 'W'):
             allmatches.append([])
             continue
+
         # add null ws between separable chars
         matches = [ m for mg in matches for m in trSep(mg) ]
+
         # now delete multiple whitespaces in a row
         matches = functools.reduce(reduceWS, [[matches[0]]] + matches[1:])
         allmatches.append(matches)
@@ -143,23 +130,28 @@ def lineup(lines):
             chunks.append([])
             justifies.append([])
             continue
+
         # enforce the first column not changing by separating it from the rest
         if matches[0][0] != 'W': matches = [('W','')] + matches
         matchesHead  , matchesTail  = matches  [:2], matches  [2:]
         templateHead , templateTail = template [:2], template [2:]
+
         # align matches & template, stuff whitespace into all missing slots
         (d, bt) = btedist(matchesTail, templateTail, matchTypeDist)
         for i in range(len(bt)):
             if bt[i] == 1:
                 matchesTail = matchesTail [:i] + [('W' ,'')] + matchesTail [i:]
         matches = matchesHead + matchesTail
+
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, chunk) = zip(*[ trSpace(m) for m in matches])
+
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
         if matchNames[0] == 'W':
             chunk = (matches[0][1],) + chunk[1:]
         justify = [ trJustify(name) for name in matchNames ]
+
         # remember our text columns & justification
         chunks.append(chunk)
         justifies.append(justify)
