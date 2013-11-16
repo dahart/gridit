@@ -5,15 +5,10 @@
 # and pads the whitespace between all the columns so everything lines up.
 # takes stdin as input, prints to stdout
 #
-# at the bottom of this file are comments about how to
-# use this, in macro form, for:
-# vs.net 2005
-# emacs [todo]
-#
-#
 
-import re
+import functools
 import operator
+import re
 
 # capture 'words'
 separableChars = r"""\[\]\{\}\(\)\;\,\=\+"""
@@ -29,22 +24,21 @@ matcher = r"""(?P<S>\s+)                               # 'S'pace, of the white v
 |(?P<W>[^\s""" + quoteChars + separableChars + r"""]+) # 'W'ord: groups of non-separable, non-whitespace chars
 """
 
-e = re.compile(matcher, re.VERBOSE)
+exp = re.compile(matcher, re.VERBOSE)
 
 #----------------------------------------------------------------------
 
-# riffle, as in riffle a deck of cards
+# riffle, as in riffle (perfect shuffle) a deck of cards
 # produce an output list by alternately picking one item from each input list
-# meant for strings-- operator.add concatenates
 def riffle(*args):
-    return reduce(operator.add, zip(*args))
+    return [ y for x in zip(*args) for y in x ]
 
 # return the print format string for right-justify if we have a number
 # or left-justify if we have anything else
 def trJustify(x):
-    if x == 'N': return ''
-    # if x == 'O': return ''
-    return '-'
+    if x == 'N': return '>'
+    # if x == 'O': return '>'
+    return '<'
 
 # collapse the text of whitespace pairs to a single space
 def trSpace(x):
@@ -106,7 +100,7 @@ def matchTypeDist(m1, m2):
     if m1[0] != m2[0] :
         # if m1[0] == 'S' or m2[0] == 'S': return 0.1
         return 1
-    if m1[0] == 'S': return 0
+    if m1[0] == 'S' or m2[0] == 'S': return 0
     # if m1[0] == 'C': return 0
     # if m1[0] == 'O': return 0
     if m1[1] == m2[1] : return 0
@@ -125,9 +119,9 @@ def lineup(lines):
     allmatches = []
     for line in lines:
         # snag all matches
-        iter = e.finditer(line)
+        lineiter = exp.finditer(line)
         # expand all matches by name
-        groups = [match.groupdict() for match in iter]
+        groups = [ match.groupdict() for match in lineiter ]
         # groups includes all non-matches- filter those out
         # strip out sub-groups, e.g. 'qc', by ensuring the group name is 1 character
         matches = [ [x for x in g.items() if x[1] and len(x[0]) == 1][0] for g in groups ]
@@ -137,7 +131,7 @@ def lineup(lines):
         # add null ws between separable chars
         matches = [ m for mg in matches for m in trSep(mg) ]
         # now delete multiple whitespaces in a row
-        matches = reduce(reduceWS, [[matches[0]]] + matches[1:])
+        matches = functools.reduce(reduceWS, [[matches[0]]] + matches[1:])
         allmatches.append(matches)
 
     # we'll align all lines to the longest matches list
@@ -146,7 +140,7 @@ def lineup(lines):
 
     chunks, justifies = [], []
     for matches in allmatches:
-        if len(matches) == 0:
+        if not matches:
             chunks.append([])
             justifies.append([])
             continue
@@ -156,12 +150,12 @@ def lineup(lines):
         templateHead , templateTail = template [:2], template [2:]
         # align matches & template, stuff whitespace into all missing slots
         (d, bt) = btedist(matchesTail, templateTail, matchTypeDist)
-        for i in xrange(len(bt)):
+        for i in range(len(bt)):
             if bt[i] == 1:
                 matchesTail = matchesTail [:i] + [('S' ,'')] + matchesTail [i:]
         matches = matchesHead + matchesTail
         # collapse all non-zero whitespace matches to single spaces
-        (matchNames, chunk) = zip(*map(trSpace, matches))
+        (matchNames, chunk) = zip(*[ trSpace(m) for m in matches])
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
         if matchNames[0] == 'S':
@@ -176,9 +170,9 @@ def lineup(lines):
     widths = [0 for x in range(maxCols)]
     for chunk in chunks:
         # zero-pad the end of the result, so that widths doesn't get truncated
-        # because zip stops when the first chunk is empty
-        newWidths = map(len, chunk) + [0] * (maxCols-len(chunk))
-        widths = map(max, zip(widths, newWidths))
+            # because zip stops when the first list is empty
+            newWidths = [ len(t) for t in chunk ] + [0] * (maxCols-len(chunk))
+            widths = [ max(w) for w in zip(widths, newWidths) ]
 
     # now go back through all our lines and output with new formatting
     newLines = []
@@ -187,12 +181,13 @@ def lineup(lines):
             newLines.append('')
             continue
         n = len(chunk)
-        a = ['%'] * n
+        a = ['{:'] * n
         b = justify
-        c = map(str, widths)
+        c = [ str(w) if w > 0 else '' for w in widths ]
         d = ['s'] * n
-        fmt = ''.join(riffle(a,b,c,d))
-        newLines.append( fmt % tuple(chunk) )
+        e = ['}'] * n
+        fmt = ''.join(riffle(a,b,c,d,e))
+        newLines.append(fmt.format(*chunk).rstrip())
 
     return newLines
 
@@ -212,4 +207,4 @@ if __name__ == "__main__":
     newLines = lineup(lines)
 
     for line in newLines:
-        print line
+        print(line)
