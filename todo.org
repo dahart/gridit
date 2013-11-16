@@ -1,14 +1,14 @@
 -*- mode:org -*-
-*     [ ] merge alignerator.py and lineup.py into one file
-**    [ ] make lineup.py into a module
-***   [ ] define the lineup function
-***   [ ] when run standalone, operate on stdin
-*     [ ] name the whole thing 'gridit'
+*     [X] merge alignerator.py and lineup.py into one file
+**    [X] make lineup.py into a module
+***   [X] define the lineup function
+***   [X] when run standalone, operate on stdin
+*     [X] name the whole thing 'gridit'
 *     [ ] release as a sublime plugin
 **    [ ] add support for sublime settings
 ***   [ ] user options
 ***   [ ] read sublime language settings when aligning: keywords, operators, separables
-***   [ ] add support for comments
+***   [X] add support for comments
 ***   [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
 ****  [ ] can i make sublime replace tabs on my selection?
 ****  [ ] integrate sublime settings as command line flags & args to the module function
@@ -18,5 +18,5 @@
 **    [ ] only operate on lines matching the template to within say 50%
 **    [ ] maybe reset alignment when more than one line doesn't match the template
 *     [ ] bugs
-**    [ ] rstrip all the output
+**    [X] rstrip all the output
 **    [ ] fix html indentation - I saw the initial indentation break

@@ -7,21 +7,20 @@
 #
 
 import functools
-import operator
 import re
 
 # capture 'words'
 separableChars = r"""\[\]\{\}\(\)\;\,\=\+"""
-quoteChars = r"""\'\""""
+quoteChars     = r"""\'\""""
+comments       = r"""//.*$|\#.*$|/\*.*\*/"""
 
-# |(?P<O>[-\+/\*%&\|\^]=|=|&&|\|\||<<=?|>>=?|::)       # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
-
-matcher = r"""(?P<S>\s+)                               # 'S'pace, of the white variety
+matcher = r"""(?P<W>\s+)                               # 'W'hite space
 |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
+|(?P<C>(""" + comments + r"""))                        # line 'C'omments
 |(?P<N>[-+]?(\d+(\.\d*)?|\.\d+|0[xX][\dA-Fa-f]+)([eE][-+]?\d+)?) # 'N'ums: match ints & floats
 |(?P<O>[-\+/\*%&\|\^=]=|\[\]|\{\}|\(\)|\+\+|>>=|<<=)   # 'O'perators- mainly this is any non-breakable groups of otherwise separable chars
-|(?P<C>[""" + separableChars + r"""])                  # 'C'har: anything separable
-|(?P<W>[^\s""" + quoteChars + separableChars + r"""]+) # 'W'ord: groups of non-separable, non-whitespace chars
+|(?P<S>[""" + separableChars + r"""])                  # 'S'eparable characters
+|(?P<G>[^\s""" + quoteChars + separableChars + r"""]+) # 'G'roups of non-separable, non-whitespace chars
 """
 
 exp = re.compile(matcher, re.VERBOSE)
@@ -42,18 +41,18 @@ def trJustify(x):
 
 # collapse the text of whitespace pairs to a single space
 def trSpace(x):
-    if x[0] == 'S' and len(x[1]) > 0: return (x[0],' ')
+    if x[0] == 'W' and len(x[1]) > 0: return (x[0],' ')
     return x
 
 # expand separable chars with whitespace on either side
 def trSep(x):
-    if x[0] == 'C': return [('S', ''), x, ('S', '')];
+    if x[0] == 'S': return [('W', ''), x, ('W', '')];
     return [x];
 
 # replace consecutive ws's with a single one
 def reduceWS(l, x):
-    if x[0] == 'S' and len(l) > 0 and l[-1][0] == 'S':
-        return l[:-1] + [('S', ' ' * max(len(x[1]), len(l[-1][1])))]
+    if x[0] == 'W' and len(l) > 0 and l[-1][0] == 'W':
+        return l[:-1] + [('W', ' ' * max(len(x[1]), len(l[-1][1])))]
     else:
         return l + [x]
 
@@ -89,8 +88,8 @@ def btedist(s, t, distfunc):
     bt = [];
     while (i >= 1 and j >= 1):
         bt.append(b[i][j])
-        if (b[i][j] == 0): i -= 1
-        elif (b[i][j] == 1): j -= 1
+        if   (b[i][j] == 0): i -= 1
+        elif (b[i][j] == 1):         j -= 1
         elif (b[i][j] == 2): i -= 1; j -= 1
     bt.reverse()
     return (d[m][n], bt)
@@ -98,10 +97,10 @@ def btedist(s, t, distfunc):
 
 def matchTypeDist(m1, m2):
     if m1[0] != m2[0] :
-        # if m1[0] == 'S' or m2[0] == 'S': return 0.1
+        # if m1[0] == 'W' or m2[0] == 'W': return 0.1
         return 1
-    if m1[0] == 'S' or m2[0] == 'S': return 0
-    # if m1[0] == 'C': return 0
+    if m1[0] == 'W' or m2[0] == 'W': return 0
+    # if m1[0] == 'S': return 0
     # if m1[0] == 'O': return 0
     if m1[1] == m2[1] : return 0
     return 1
@@ -125,7 +124,7 @@ def lineup(lines):
         # groups includes all non-matches- filter those out
         # strip out sub-groups, e.g. 'qc', by ensuring the group name is 1 character
         matches = [ [x for x in g.items() if x[1] and len(x[0]) == 1][0] for g in groups ]
-        if not matches or (len(matches) == 1 and matches[0][0] == 'S'):
+        if not matches or (len(matches) == 1 and matches[0][0] == 'W'):
             allmatches.append([])
             continue
         # add null ws between separable chars
@@ -136,7 +135,7 @@ def lineup(lines):
 
     # we'll align all lines to the longest matches list
     template = max( allmatches, key=lambda m:len(m) )
-    if template and template[0][0] != 'S': template = [('S', '')] + template
+    if template and template[0][0] != 'W': template = [('W', '')] + template
 
     chunks, justifies = [], []
     for matches in allmatches:
@@ -145,20 +144,20 @@ def lineup(lines):
             justifies.append([])
             continue
         # enforce the first column not changing by separating it from the rest
-        if matches[0][0] != 'S': matches = [('S','')] + matches
+        if matches[0][0] != 'W': matches = [('W','')] + matches
         matchesHead  , matchesTail  = matches  [:2], matches  [2:]
         templateHead , templateTail = template [:2], template [2:]
         # align matches & template, stuff whitespace into all missing slots
         (d, bt) = btedist(matchesTail, templateTail, matchTypeDist)
         for i in range(len(bt)):
             if bt[i] == 1:
-                matchesTail = matchesTail [:i] + [('S' ,'')] + matchesTail [i:]
+                matchesTail = matchesTail [:i] + [('W' ,'')] + matchesTail [i:]
         matches = matchesHead + matchesTail
         # collapse all non-zero whitespace matches to single spaces
         (matchNames, chunk) = zip(*[ trSpace(m) for m in matches])
         # except restore the very first column if it was whitespace
         # we don't want the overall indentation to change
-        if matchNames[0] == 'S':
+        if matchNames[0] == 'W':
             chunk = (matches[0][1],) + chunk[1:]
         justify = [ trJustify(name) for name in matchNames ]
         # remember our text columns & justification
@@ -170,9 +169,9 @@ def lineup(lines):
     widths = [0 for x in range(maxCols)]
     for chunk in chunks:
         # zero-pad the end of the result, so that widths doesn't get truncated
-            # because zip stops when the first list is empty
-            newWidths = [ len(t) for t in chunk ] + [0] * (maxCols-len(chunk))
-            widths = [ max(w) for w in zip(widths, newWidths) ]
+        # because zip stops when the first list is empty
+        newWidths = [ len(t) for t in chunk ] + [0] * (maxCols-len(chunk))
+        widths = [ max(w) for w in zip(widths, newWidths) ]
 
     # now go back through all our lines and output with new formatting
     newLines = []
