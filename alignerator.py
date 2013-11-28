@@ -28,15 +28,6 @@ class AligneratorCommand(sublime_plugin.TextCommand):
     def __init__(self, *args, **kwargs):
         super(AligneratorCommand, self).__init__(*args, **kwargs)
 
-    def normalize_line_endings(self, string):
-        string = string.replace('\r\n', '\n').replace('\r', '\n')
-        line_endings = self.view.settings().get('default_line_ending')
-        if line_endings == 'windows':
-            string = string.replace('\n', '\r\n')
-        elif line_endings == 'mac':
-            string = string.replace('\n', '\r')
-        return string
-
     def run(self, edit):
         # read input lines
         view = self.view
@@ -49,4 +40,9 @@ class AligneratorCommand(sublime_plugin.TextCommand):
 
         newLines = gridit.lineup(lines)
 
-        view.replace(edit, sel[0], self.normalize_line_endings('\n'.join(newLines)))
+        line_endings = self.view.settings().get('default_line_ending')
+        lineEndChars = '\n'
+        if   line_endings == 'windows': lineEndChars = '\r\n'
+        elif line_endings == 'mac'    : lineEndChars = '\r'
+
+        view.replace(edit, sel[0], lineEndChars.join(newLines))
