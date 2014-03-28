@@ -19,7 +19,7 @@ import re
 
 separableChars = r'\[\]\{\}\(\)\;\,\=\+'
 quoteChars     = r'\'\"'
-comments       = r'//.*$|\#.*$|/\*.*\*/'
+comments       = r'//.*$|\#.*$|/\*.*?\*/'
 
 tokenRE = r"""(?P<W>\s+)                               # 'W'hite space
 |(?P<Q>(?P<qc>\'+|\"+)([^\\]|\\.)*?(?P=qc))            # 'Q'uoted items
