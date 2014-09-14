@@ -9,7 +9,7 @@ import sublime
 import sublime_plugin
 import sys
 
-from . import gridit
+from . import lineup
 
 # try:
 #     from Default.indentation import line_and_normed_pt as normed_rowcol
@@ -24,9 +24,9 @@ from . import gridit
 
 #----------------------------------------------------------------------
 
-class AligneratorCommand(sublime_plugin.TextCommand):
+class GriditCommand(sublime_plugin.TextCommand):
     def __init__(self, *args, **kwargs):
-        super(AligneratorCommand, self).__init__(*args, **kwargs)
+        super(GriditCommand, self).__init__(*args, **kwargs)
 
     def run(self, edit):
         # read input lines
@@ -38,7 +38,7 @@ class AligneratorCommand(sublime_plugin.TextCommand):
         oldText = view.substr(sel[0])
         lines = oldText.split('\n')
 
-        newLines = gridit.lineup(lines)
+        newLines = lineup.lineup(lines)
 
         line_endings = self.view.settings().get('default_line_ending')
         lineEndChars = '\n'
