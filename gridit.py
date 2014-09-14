@@ -11,6 +11,26 @@ import sys
 
 from . import lineup
 
+# **    [ ] add support for sublime settings
+# ***   [ ] user options
+# ***   [ ] read sublime language settings when aligning: keywords, operators, separables
+# ***   [X] allow comments to NOT be aligned
+# ***   [ ] allow comments to be aligned
+# ***   [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
+# ****  [ ] can i make sublime replace tabs on my selection?
+# ****  [ ] integrate sublime settings as command line flags & args to the module function
+# ***** [ ] user flag -tabsize
+# **    [ ] what about emacs?  dev studio?  etc.?  xcode?
+
+# *     [ ] possible features
+# **    [ ] only operate on lines matching the template to within say 50%
+# **    [ ] maybe reset alignment when more than one line doesn't match the template
+# **    [ ] maybe perform alignment on multiple templates simultaneously
+
+# *     [ ] bugs
+# **    [ ] fix html indentation - I saw the initial indentation break
+
+
 # try:
 #     from Default.indentation import line_and_normed_pt as normed_rowcol
 # except ImportError:
