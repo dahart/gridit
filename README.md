@@ -9,17 +9,21 @@ Gridit tries to align everything in your selection, not just the start of the li
 
 ### Before:
 
+```
 (0,d[i-1][j]+1),
 (12, d[i][j-1]+1),
 (2,d[i][j-1]+1),
 (300,d[i][j-1]+2,5),
+```
 
 ### After:
 
+```
 (  0, d[i-1][j  ]+1  ),
 ( 12, d[i  ][j-1]+1  ),
 (  2, d[i  ][j-1]+1  ),
 (300, d[i  ][j-1]+2,5),
+```
 
 ## How
 
