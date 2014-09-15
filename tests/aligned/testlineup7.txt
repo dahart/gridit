@@ -1,0 +1,2 @@
+if      (ru > 0.75 && pu < 0.25): wind -= 1;
+else if (ru < 0.25 && pu > 0.75): wind += 1;

@@ -1,0 +1,20 @@
+  before:
+		'position' : 'absolute'        ,
+		'top'      : y          + 'px' ,
+		'height'   : h          + 'px' ,
+		'left'     : x          + 'px' ,
+		'width'    : w          + 'px'
+
+  actual:
+		'position' : 'absolute'        ,
+		'top'      : y          + 'px' ,
+		'height'   : h          + 'px' ,
+		'left'     : x          + 'px' ,
+		'width'    : w          + 'px'
+
+  desired:
+		'position' : 'absolute'        ,
+		'top'      : y          + 'px' ,
+		'height'   : h          + 'px' ,
+		'left'     : x          + 'px' ,
+		'width'    : w          + 'px'
