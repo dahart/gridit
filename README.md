@@ -43,3 +43,10 @@ For any other editor, you can still line up all your things. Download gridit, th
 - Helps when refactoring repetetive blocks, using column selection. Especially when adding, removing or rearranging arguments.
 
 - Gridit left-aligns text to match up prefixes, and right-aligns numbers to match up position, e.g. ones column.
+
+
+## Caveats
+
+Gridit was nurtured with the languages that I use most, namely C/C++, python, javascript, bash and a few others. It might not work well with your favorite language. Show me what doesn't work and we can try to fix it.
+
+I want gridit to be magical and always format code beautifully, but sometimes, occasionally, gridit doesn't do what you expect. Keep undo, and wbond's Alignment plugin, handy - these can cover some cases that gridit doesn't deal with. And, of course, send me examples that gridit can't handle, along with what it should look like, and we'll see if we can't make good things happen.
