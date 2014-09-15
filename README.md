@@ -36,7 +36,7 @@ For any other editor, you can still line up all your things. Download gridit, th
 
 - Feed your inner perfectionist / OCD.
 
-- Drastically improve the readability of repetetive lines.
+- Drastically improve readability of repetetive lines. Gridit makes some typos stick out like a sore thumb.
 
 - Allows, supports, provides more reasons to use column selection for fast editing.
 
