@@ -227,15 +227,22 @@ try:
             sel = view.sel()
 
             if len(sel) != 1:
-                print('Gridit: I can only handle one region')
+                print('Gridit: Sorry, I can only handle one region for now.')
                 return
 
-            view.run_command("expand_selection", {"to": "line"})
-            # Fix the selection to what expand_selection should have been
-            # to make sure repeated runs don't expand the lines of the selection every time
             reg = view.sel()[0]
-            view.sel().clear()
-            view.sel().add(sublime.Region(reg.a, reg.b-1))
+            sel_start_line  = (view.classify(reg.a) & sublime.CLASS_LINE_START) != 0
+            sel_start_empty = (view.classify(reg.a) & sublime.CLASS_EMPTY_LINE) != 0
+            sel_end_line    = (view.classify(reg.b) & sublime.CLASS_LINE_END  ) != 0
+            sel_end_empty   = (view.classify(reg.b) & sublime.CLASS_EMPTY_LINE) != 0
+
+            if (not sel_start_line and not sel_start_empty) and (not sel_end_line and not sel_end_empty):
+                view.run_command("expand_selection", {"to": "line"})
+                # Fix the selection to what expand_selection should have been
+                # to make sure repeated runs don't expand the lines of the selection every time
+                reg = view.sel()[0]
+                view.sel().clear()
+                view.sel().add(sublime.Region(reg.a, reg.b-1))
 
             oldText = view.substr(sel[0])
             lines   = oldText.split('\n')
