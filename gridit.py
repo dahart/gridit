@@ -95,8 +95,8 @@ def btedist(s, t, distfunc):
     for i in range(1, m+1):
         for j in range(1, n+1):
             (b[i][j], d[i][j]) = min(
-                (0, d[i-1][j]+1),
-                (1, d[i][j-1]+1),
+                (0, d[i-1][j  ]+1),
+                (1, d[i  ][j-1]+1),
                 (2, d[i-1][j-1] + distfunc(s[i-1], t[j-1])),
                 key=lambda x:x[1])
     (i, j) = (m, n)
