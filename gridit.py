@@ -221,9 +221,35 @@ try:
             # read input lines
             view = self.view
             sel = view.sel()
+
             if len(sel) != 1:
                 print('Gridit: try selecting one (and only one) region')
                 return
+
+            view.run_command("expand_selection", {"to": "line"})
+            # Fix the selection to what expand_selection should have been
+            # to make sure repeated runs don't expand the lines of the selection every time
+            reg = view.sel()[0]
+            view.sel().clear()
+            view.sel().add(sublime.Region(reg.a, reg.b-1))
+
+            #
+            # if (view.classify(sel[0].a) & sublime.CLASS_LINE_START) == 0:
+            #     regions = list(map(lambda reg:view.expand_by_class(reg, sublime.CLASS_LINE_START), sel))
+            #     sel.clear()
+            #     sel.add_all(regions)
+            # if (view.classify(sel[0].b) & sublime.CLASS_LINE_END) == 0:
+            #     regions = list(map(lambda reg:view.expand_by_class(reg, sublime.CLASS_LINE_END), sel))
+            #     sel.clear()
+            #     sel.add_all(regions)
+            #
+            # while view.classify(sel[0].a) & sublime.CLASS_LINE_START == 0:
+            #     sel[0].a--
+            # while view.classify(sel[0].b) & sublime.CLASS_LINE_END == 0:
+            #     sel[0].b++
+            #
+
+
             oldText = view.substr(sel[0])
             lines = oldText.split('\n')
 
