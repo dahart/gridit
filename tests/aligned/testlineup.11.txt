@@ -1,0 +1,10 @@
+		case     this.errors.DECLINE_AUTHORIZATION:                 this.handleDeclineAuthorization         (initialLoad); break;
+		case     this.errors.NOT_AUTHORIZED:                        this.handleNotAuthorized                (initialLoad); break;
+		case     this.errors.BAD_REQUEST:                           this.handleBadRequest                   (initialLoad); break;
+		case     this.errors.UNREGISTERED_USER_RATE_LIMIT_EXCEEDED: this.handleUnregisteredRateLimitExceeded(initialLoad); break;
+		case     this.errors.USER_RATE_LIMIT_EXCEEDED:              this.handleRateLimitExceeded            (initialLoad); break;
+		case     this.errors.QUOTA_EXCEEDED:                        this.handleQuotaExceeded                (initialLoad); break;
+		case     this.errors.GOOGLE_ANALYTICS_UNAVAILABLE:          this.handleGoogleUnavailable            (initialLoad); break;
+		case     this.errors.DAILY_LIMIT_EXCEEDED:                  this.handleDailyLimitExceeded           (initialLoad); break;
+		case     this.errors.EXPIRED_TOKEN:                         this.handleExpiredToken                 (initialLoad); break;
+		default: this.defaultHandler                                                                        (initialLoad); break;
