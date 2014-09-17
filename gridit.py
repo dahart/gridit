@@ -1,23 +1,27 @@
 #!/usr/bin/python
 
-# **    [ ] add support for sublime settings
-# ***   [ ] user options
-# ***   [ ] read sublime language settings when aligning: keywords, operators, separables
-# ***   [X] allow comments to NOT be aligned
-# ***   [ ] allow comments to be aligned
-# ***   [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
-# ****  [ ] can i make sublime replace tabs on my selection?
-# ****  [ ] integrate sublime settings as command line flags & args to the module function
-# ***** [ ] user flag -tabsize
-# **    [ ] what about emacs?  dev studio?  etc.?  xcode?
+# [ ] add support for sublime settings
+# [ ] add support for column selections (perhaps generally multiple regions)
+# [ ] user options
+# [ ] read sublime language settings when aligning: keywords, operators, separables
+# [X] allow comments to NOT be aligned
+# [ ] allow comments to be aligned
 
-# *     [ ] possible features
-# **    [ ] only operate on lines matching the template to within say 50%
-# **    [ ] maybe reset alignment when more than one line doesn't match the template
-# **    [ ] maybe perform alignment on multiple templates simultaneously
+# [ ] fix differing leading whitespace not aligning
+# i don't remember why i want tab sizes
+# [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
+# [ ] can i make sublime replace tabs on my selection?
 
-# *     [ ] bugs
-# **    [ ] fix html indentation - I saw the initial indentation break
+# [ ] integrate sublime settings as command line flags & args to the module function
+# [ ] user flag -tabsize
+# [ ] what about emacs?  dev studio?  etc.?  xcode?
+
+# [ ] only operate on lines matching the template to within say 50%
+# [ ] maybe reset alignment when more than one line doesn't match the template
+# [ ] maybe perform alignment on multiple templates simultaneously
+
+# [ ] bugs
+# [ ] fix html indentation - I saw the initial indentation break
 
 
 #----------------------------------------------------------------------
@@ -223,7 +227,7 @@ try:
             sel = view.sel()
 
             if len(sel) != 1:
-                print('Gridit: try selecting one (and only one) region')
+                print('Gridit: I can only handle one region')
                 return
 
             view.run_command("expand_selection", {"to": "line"})
@@ -233,25 +237,8 @@ try:
             view.sel().clear()
             view.sel().add(sublime.Region(reg.a, reg.b-1))
 
-            #
-            # if (view.classify(sel[0].a) & sublime.CLASS_LINE_START) == 0:
-            #     regions = list(map(lambda reg:view.expand_by_class(reg, sublime.CLASS_LINE_START), sel))
-            #     sel.clear()
-            #     sel.add_all(regions)
-            # if (view.classify(sel[0].b) & sublime.CLASS_LINE_END) == 0:
-            #     regions = list(map(lambda reg:view.expand_by_class(reg, sublime.CLASS_LINE_END), sel))
-            #     sel.clear()
-            #     sel.add_all(regions)
-            #
-            # while view.classify(sel[0].a) & sublime.CLASS_LINE_START == 0:
-            #     sel[0].a--
-            # while view.classify(sel[0].b) & sublime.CLASS_LINE_END == 0:
-            #     sel[0].b++
-            #
-
-
             oldText = view.substr(sel[0])
-            lines = oldText.split('\n')
+            lines   = oldText.split('\n')
 
             newLines = lineup(lines)
 
