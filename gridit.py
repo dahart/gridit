@@ -1,16 +1,31 @@
 #!/usr/bin/python
 
-# [ ] add support for sublime settings
+# TODO
+
+# [ ] add support for sublime settings (elaborate...)
+# okay, i was probably thinking be able to toggle some of the gridit behaviors,
+# like scoring text within a column. sometimes its desirable, and sometimes its just wacky
+#
 # [ ] add support for column selections (perhaps generally multiple regions)
+#
 # [ ] user options
 # [ ] read sublime language settings when aligning: keywords, operators, separables
 # [X] allow comments to NOT be aligned
 # [ ] allow comments to be aligned
 
 # [ ] fix differing leading whitespace not aligning
-# i don't remember why i want tab sizes
+# Bug: If the first column contains mixed numbers and strings, then repeated aligns
+# will add more leading whitespace every time.
+
+# i don't remember why i want tab sizes.
+# wait, i think i do
+# var lists in javascript - it would be nice to be able to align this properly:
+# var a=1,
+#     b=2;
+# that would require knowing the tab size.
+#
 # [ ] read sublime tab stop size when aligning (am I replacing tabs with spaces?)
-# [ ] can i make sublime replace tabs on my selection?
+# [ ] can i make sublime replace tabs on my selection? (dont want to replace leading tabs though; because python)
 
 # [ ] integrate sublime settings as command line flags & args to the module function
 # [ ] user flag -tabsize
@@ -42,7 +57,7 @@ import re
 # also, my rule is that tokens have a 1 character name
 # groups to discard can be named with more than 1 character
 
-separableChars = r'\[\]\{\}\(\)\;\,\=\+'
+separableChars = r'\[\]\{\}\(\)\;\,\=\+\:'
 quoteChars     = r'\'\"'
 comments       = r'//.*$|\#.*$|/\*.*?\*/'
 
