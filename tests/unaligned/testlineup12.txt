@@ -1,0 +1,4 @@
+		finalOffset['x'] = (totalBB['w'] * (1 - this.scale) *.5);
+		finalOffset['y'] = (totalBB['h'] * (1 - this.scale) *.5);
+		finalOffset['w'] = -(totalBB['w'] * (1 - this.scale));
+		finalOffset['h'] = -(totalBB['h'] * (1 - this.scale));
