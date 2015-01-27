@@ -130,10 +130,9 @@ def btedist(s, t, distfunc):
 
 
 def matchTypeDist(m1, m2):
-    if m1[0] != m2[0] :
-        return 1
-    if m1[0] == 'W' or m2[0] == 'W': return 0
-    if m1[1] == m2[1] : return 0
+    if m1[0] != m2[0]               : return 1
+    if m1[0] == 'W' or m2[0] == 'W' : return 0
+    if m1[1] == m2[1]               : return 0
     return 1
 
 
