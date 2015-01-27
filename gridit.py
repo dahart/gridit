@@ -139,7 +139,7 @@ def matchTypeDist(m1, m2):
 
 #----------------------------------------------------------------------
 
-def lineup(lines):
+def gridit(lines):
     allmatches = []
     for line in lines:
         # snag all matches
@@ -262,7 +262,7 @@ try:
             oldText = view.substr(sel[0])
             lines   = oldText.split('\n')
 
-            newLines = lineup(lines)
+            newLines = gridit(lines)
 
             line_endings = self.view.settings().get('default_line_ending')
             lineEndChars = '\n'
@@ -289,7 +289,7 @@ except ImportError:
 
 
 # If this file is executed directly,
-# then process stdin using lineup() and paste to stdout
+# then process stdin using gridit() and paste to stdout
 if __name__ == "__main__":
     import fileinput
 
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 
-    newLines = lineup(lines)
+    newLines = gridit(lines)
 
     for line in newLines:
         print(line)
