@@ -34,15 +34,15 @@ For any other editor, you can still line up all your things. Download gridit, th
 
 ## Why
 
-- Feed your inner perfectionist / OCD.
-
-- Drastically improve readability of repetetive lines. Gridit makes some typos stick out like a sore thumb.
+- Helps when refactoring repetetive blocks, using column selection. Especially when adding, removing or rearranging arguments.
 
 - Allows, supports, provides more reasons to use column selection for fast editing.
 
-- Helps when refactoring repetetive blocks, using column selection. Especially when adding, removing or rearranging arguments.
+- Improve readability of repetetive lines. Gridit makes some typos stick out like a sore thumb.
 
 - Gridit left-aligns text to match up prefixes, and right-aligns numbers to match up position, e.g. ones column.
+
+- Feed your inner perfectionist / OCD.
 
 
 ## Caveats
